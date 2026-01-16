@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Golf Weather Physics - Demo</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo-placeholder">
+                <span class="logo-icon">⛳</span>
+                <span class="logo-text">Golf Weather Physics</span>
+            </div>
+        </div>
+        <nav class="header-nav">
+            <a href="#" class="nav-link">Dashboard</a>
+            <a href="#" class="nav-link">API Docs</a>
+            <a href="#" class="nav-link">Pricing</a>
+        </nav>
+        <div class="header-right">
+            <button class="btn-secondary" onclick="showPlaceholder('Settings')">Settings</button>
+            <button class="btn-secondary" onclick="showPlaceholder('API Keys')">API Keys</button>
+            <button class="btn-primary" onclick="showPlaceholder('Account')">Account</button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Left Sidebar - Scenarios -->
+        <aside class="sidebar">
+            <h2 class="sidebar-title">Golf Scenarios</h2>
+            <p class="sidebar-subtitle">Select a real-world scenario to see how weather affects your shot</p>
+
+            <div class="scenarios-list">
+                <button class="scenario-card active" onclick="loadScenario(0)">
+                    <div class="scenario-icon">🏌️</div>
+                    <div class="scenario-info">
+                        <h3>Pebble Beach #7</h3>
+                        <p>107-yard par 3 • January conditions</p>
+                        <span class="scenario-tag">Coastal Wind</span>
+                    </div>
+                </button>
+
+                <button class="scenario-card" onclick="loadScenario(1)">
+                    <div class="scenario-icon">🏔️</div>
+                    <div class="scenario-info">
+                        <h3>Castle Pines #18</h3>
+                        <p>175-yard approach • Summer</p>
+                        <span class="scenario-tag">High Altitude</span>
+                    </div>
+                </button>
+
+                <button class="scenario-card" onclick="loadScenario(2)">
+                    <div class="scenario-icon">🌴</div>
+                    <div class="scenario-info">
+                        <h3>TPC Scottsdale #16</h3>
+                        <p>162-yard par 3 • Phoenix heat</p>
+                        <span class="scenario-tag">Desert Heat</span>
+                    </div>
+                </button>
+
+                <button class="scenario-card" onclick="loadScenario(3)">
+                    <div class="scenario-icon">🏴󠁧󠁢󠁳󠁣󠁴󠁿</div>
+                    <div class="scenario-info">
+                        <h3>St Andrews #11</h3>
+                        <p>172-yard par 3 • Scottish links</p>
+                        <span class="scenario-tag">Links Wind</span>
+                    </div>
+                </button>
+
+                <button class="scenario-card" onclick="loadScenario(4)">
+                    <div class="scenario-icon">❄️</div>
+                    <div class="scenario-info">
+                        <h3>Bethpage Black #17</h3>
+                        <p>207-yard par 3 • Cold morning</p>
+                        <span class="scenario-tag">Cold & Dense Air</span>
+                    </div>
+                </button>
+
+                <button class="scenario-card" onclick="loadScenario(5)">
+                    <div class="scenario-icon">🌧️</div>
+                    <div class="scenario-info">
+                        <h3>Bandon Dunes #12</h3>
+                        <p>145-yard par 3 • Oregon coast</p>
+                        <span class="scenario-tag">Wind & Rain</span>
+                    </div>
+                </button>
+
+                <div class="divider"></div>
+
+                <button class="scenario-card custom-card" onclick="showCustomPanel()">
+                    <div class="scenario-icon">⚙️</div>
+                    <div class="scenario-info">
+                        <h3>Custom Scenario</h3>
+                        <p>Set your own conditions</p>
+                        <span class="scenario-tag">Build Your Own</span>
+                    </div>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Center Content -->
+        <section class="content">
+            <!-- Scenario Header -->
+            <div class="content-header">
+                <h1 id="scenario-title">Pebble Beach #7 - Coastal Wind Challenge</h1>
+                <p id="scenario-description">A 107-yard downhill par 3 overlooking the Pacific Ocean. January brings cool temperatures and swirling coastal winds that can turn a simple wedge into a guessing game.</p>
+            </div>
+
+            <!-- Comparison Cards -->
+            <div class="comparison-container">
+                <!-- Standard Stats -->
+                <div class="stats-card standard">
+                    <div class="card-header">
+                        <h2>Standard Calculation</h2>
+                        <span class="card-badge">No Weather</span>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-value" id="std-carry">105</span>
+                            <span class="stat-label">Carry (yds)</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="std-total">115</span>
+                            <span class="stat-label">Total (yds)</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="std-apex">28</span>
+                            <span class="stat-label">Apex (yds)</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="std-drift">0</span>
+                            <span class="stat-label">Drift (yds)</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="std-flight">4.2</span>
+                            <span class="stat-label">Flight (sec)</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="std-land">48°</span>
+                            <span class="stat-label">Land Angle</span>
+                        </div>
+                    </div>
+                    <div class="club-recommendation">
+                        <span class="club-label">Club Selection:</span>
+                        <span class="club-value" id="std-club">Pitching Wedge</span>
+                    </div>
+                </div>
+
+                <!-- Weather-Adjusted Stats -->
+                <div class="stats-card enhanced">
+                    <div class="card-header">
+                        <h2>Weather-Adjusted</h2>
+                        <span class="card-badge">Live Physics</span>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-value" id="adj-carry">97</span>
+                            <span class="stat-label">Carry (yds)</span>
+                            <span class="stat-delta negative" id="delta-carry">-8</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="adj-total">106</span>
+                            <span class="stat-label">Total (yds)</span>
+                            <span class="stat-delta negative" id="delta-total">-9</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="adj-apex">26</span>
+                            <span class="stat-label">Apex (yds)</span>
+                            <span class="stat-delta negative" id="delta-apex">-2</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="adj-drift">12</span>
+                            <span class="stat-label">Drift (yds)</span>
+                            <span class="stat-delta negative" id="delta-drift">+12</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="adj-flight">4.0</span>
+                            <span class="stat-label">Flight (sec)</span>
+                            <span class="stat-delta" id="delta-flight">-0.2</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="adj-land">45°</span>
+                            <span class="stat-label">Land Angle</span>
+                            <span class="stat-delta" id="delta-land">-3°</span>
+                        </div>
+                    </div>
+                    <div class="club-recommendation enhanced">
+                        <span class="club-label">Adjusted Club:</span>
+                        <span class="club-value" id="adj-club">9-Iron (aim 10yds left)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weather Conditions Used -->
+            <div class="conditions-bar">
+                <h3>Current Conditions</h3>
+                <div class="conditions-pills">
+                    <span class="condition-pill" id="cond-temp">🌡️ 54°F</span>
+                    <span class="condition-pill" id="cond-wind">💨 15 mph headwind</span>
+                    <span class="condition-pill" id="cond-altitude">⛰️ 50 ft elevation</span>
+                    <span class="condition-pill" id="cond-humidity">💧 78% humidity</span>
+                </div>
+            </div>
+
+            <!-- Impact Breakdown -->
+            <div class="impact-breakdown">
+                <h3>Impact Breakdown</h3>
+                <div class="impact-bars">
+                    <div class="impact-item">
+                        <span class="impact-label">Wind Effect</span>
+                        <div class="impact-bar-container">
+                            <div class="impact-bar negative" id="bar-wind" style="width: 60%"></div>
+                        </div>
+                        <span class="impact-value" id="impact-wind">-8.5 yds</span>
+                    </div>
+                    <div class="impact-item">
+                        <span class="impact-label">Temperature</span>
+                        <div class="impact-bar-container">
+                            <div class="impact-bar negative" id="bar-temp" style="width: 20%"></div>
+                        </div>
+                        <span class="impact-value" id="impact-temp">-2.1 yds</span>
+                    </div>
+                    <div class="impact-item">
+                        <span class="impact-label">Altitude</span>
+                        <div class="impact-bar-container">
+                            <div class="impact-bar positive" id="bar-altitude" style="width: 10%"></div>
+                        </div>
+                        <span class="impact-value" id="impact-altitude">+0.5 yds</span>
+                    </div>
+                    <div class="impact-item">
+                        <span class="impact-label">Humidity</span>
+                        <div class="impact-bar-container">
+                            <div class="impact-bar positive" id="bar-humidity" style="width: 5%"></div>
+                        </div>
+                        <span class="impact-value" id="impact-humidity">+0.3 yds</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Plain English Explanation -->
+            <div class="explanation-box">
+                <h3>💡 What This Means For Your Shot</h3>
+                <p id="explanation-text">
+                    The 15 mph ocean wind is the biggest factor here, costing you <strong>8.5 yards</strong> of carry.
+                    Combined with the cool 54°F temperature (denser air = more drag), your standard pitching wedge
+                    will come up short. <strong>Club up to a 9-iron</strong> and aim 10 yards left to account for the
+                    left-to-right wind drift. The ball will land at a slightly shallower angle, so expect
+                    <strong>more roll than usual</strong> on this firm coastal green.
+                </p>
+            </div>
+        </section>
+
+        <!-- Custom Panel (Hidden by default) -->
+        <div class="custom-panel" id="custom-panel">
+            <div class="custom-panel-header">
+                <h2>Custom Scenario Builder</h2>
+                <button class="close-btn" onclick="hideCustomPanel()">×</button>
+            </div>
+
+            <div class="custom-form">
+                <div class="form-section">
+                    <h3>Shot Parameters</h3>
+                    <div class="form-group">
+                        <label>Ball Speed (mph)</label>
+                        <input type="range" id="ball-speed" min="60" max="180" value="120">
+                        <span class="range-value" id="ball-speed-val">120</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Launch Angle (°)</label>
+                        <input type="range" id="launch-angle" min="5" max="45" value="18">
+                        <span class="range-value" id="launch-angle-val">18</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Spin Rate (rpm)</label>
+                        <input type="range" id="spin-rate" min="1000" max="10000" value="5000" step="100">
+                        <span class="range-value" id="spin-rate-val">5000</span>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Weather Conditions</h3>
+                    <div class="form-group">
+                        <label>Temperature (°F)</label>
+                        <input type="range" id="temperature" min="30" max="110" value="70">
+                        <span class="range-value" id="temperature-val">70</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Wind Speed (mph)</label>
+                        <input type="range" id="wind-speed" min="0" max="40" value="10">
+                        <span class="range-value" id="wind-speed-val">10</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Wind Direction</label>
+                        <select id="wind-direction">
+                            <option value="0">Headwind (0°)</option>
+                            <option value="45">Front-Left (45°)</option>
+                            <option value="90">Left-to-Right (90°)</option>
+                            <option value="135">Back-Left (135°)</option>
+                            <option value="180">Tailwind (180°)</option>
+                            <option value="225">Back-Right (225°)</option>
+                            <option value="270">Right-to-Left (270°)</option>
+                            <option value="315">Front-Right (315°)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Altitude (ft)</label>
+                        <input type="range" id="altitude" min="0" max="8000" value="0" step="100">
+                        <span class="range-value" id="altitude-val">0</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Humidity (%)</label>
+                        <input type="range" id="humidity" min="0" max="100" value="50">
+                        <span class="range-value" id="humidity-val">50</span>
+                    </div>
+                </div>
+
+                <button class="btn-simulate" onclick="simulateCustom()">
+                    🚀 Simulate Shot
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Placeholder Modal -->
+    <div class="modal-overlay" id="modal-overlay" onclick="hideModal()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <h2 id="modal-title">Feature Coming Soon</h2>
+            <p id="modal-text">This feature is a placeholder for future development.</p>
+            <button class="btn-primary" onclick="hideModal()">Got it</button>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading">
+        <div class="loading-spinner"></div>
+        <p>Calculating trajectory...</p>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
