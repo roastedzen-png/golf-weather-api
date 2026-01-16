@@ -38,6 +38,18 @@
             <p class="sidebar-subtitle">Select a scenario to see how weather affects your shot</p>
 
             <div class="scenarios-list">
+                <!-- Custom Scenario - First -->
+                <button class="scenario-card custom-card" onclick="showCustomPanel()">
+                    <div class="scenario-icon">⚙️</div>
+                    <div class="scenario-info">
+                        <h3>Custom Scenario</h3>
+                        <p>Pick your club and conditions</p>
+                        <span class="scenario-tag">BUILD YOUR OWN</span>
+                    </div>
+                </button>
+
+                <div class="divider"></div>
+
                 <!-- Club-based scenarios -->
                 <button class="scenario-card active" onclick="loadScenario(0)">
                     <div class="scenario-icon">🏌️</div>
@@ -105,16 +117,6 @@
                     </div>
                 </button>
 
-                <div class="divider"></div>
-
-                <button class="scenario-card custom-card" onclick="showCustomPanel()">
-                    <div class="scenario-icon">⚙️</div>
-                    <div class="scenario-info">
-                        <h3>Custom Scenario</h3>
-                        <p>Pick your club and conditions</p>
-                        <span class="scenario-tag">BUILD YOUR OWN</span>
-                    </div>
-                </button>
             </div>
         </aside>
 
@@ -322,38 +324,84 @@
 
                 <div class="form-section">
                     <h3>2. Set Weather Conditions</h3>
+
+                    <!-- Location Source Toggle -->
                     <div class="form-group">
-                        <label>Temperature</label>
-                        <input type="range" id="temperature" min="30" max="110" value="70">
-                        <span class="range-value" id="temperature-val">70°F</span>
+                        <label>Weather Source</label>
+                        <div class="weather-source-toggle">
+                            <button type="button" class="source-btn active" data-source="manual" onclick="setWeatherSource('manual')">
+                                Manual
+                            </button>
+                            <button type="button" class="source-btn" data-source="location" onclick="setWeatherSource('location')">
+                                Current Location
+                            </button>
+                            <button type="button" class="source-btn" data-source="city" onclick="setWeatherSource('city')">
+                                City Search
+                            </button>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Wind Speed</label>
-                        <input type="range" id="wind-speed" min="0" max="35" value="10">
-                        <span class="range-value" id="wind-speed-val">10 mph</span>
+
+                    <!-- Location Input (hidden by default) -->
+                    <div class="location-input-section" id="location-input-section" style="display: none;">
+                        <div class="form-group" id="city-input-group" style="display: none;">
+                            <label>City</label>
+                            <div class="city-search-wrapper">
+                                <div class="city-input-container">
+                                    <input type="text" id="city-input" placeholder="Start typing a city..." autocomplete="off">
+                                    <div class="city-suggestions" id="city-suggestions"></div>
+                                </div>
+                                <button type="button" class="btn-fetch-weather" onclick="fetchWeatherByCity()">
+                                    Get Weather
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group" id="current-location-group" style="display: none;">
+                            <button type="button" class="btn-fetch-weather full-width" onclick="fetchWeatherByCurrentLocation()">
+                                Use My Current Location
+                            </button>
+                        </div>
+                        <!-- Weather Status Display -->
+                        <div class="weather-status" id="weather-status" style="display: none;">
+                            <div class="weather-status-icon" id="weather-status-icon"></div>
+                            <div class="weather-status-text" id="weather-status-text"></div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Wind Direction</label>
-                        <select id="wind-direction">
-                            <option value="0">Headwind (into you)</option>
-                            <option value="45">Front-Left quartering</option>
-                            <option value="90">Left-to-Right crosswind</option>
-                            <option value="135">Back-Left quartering</option>
-                            <option value="180">Tailwind (behind you)</option>
-                            <option value="225">Back-Right quartering</option>
-                            <option value="270">Right-to-Left crosswind</option>
-                            <option value="315">Front-Right quartering</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Altitude</label>
-                        <input type="range" id="altitude" min="0" max="7000" value="0" step="100">
-                        <span class="range-value" id="altitude-val">Sea level</span>
-                    </div>
-                    <div class="form-group">
-                        <label>Humidity</label>
-                        <input type="range" id="humidity" min="10" max="100" value="50">
-                        <span class="range-value" id="humidity-val">50%</span>
+
+                    <!-- Manual Weather Controls -->
+                    <div class="weather-controls" id="weather-controls">
+                        <div class="form-group">
+                            <label>Temperature</label>
+                            <input type="range" id="temperature" min="30" max="110" value="70">
+                            <span class="range-value" id="temperature-val">70°F</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Wind Speed</label>
+                            <input type="range" id="wind-speed" min="0" max="35" value="10">
+                            <span class="range-value" id="wind-speed-val">10 mph</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Wind Direction</label>
+                            <select id="wind-direction">
+                                <option value="0">Headwind (into you)</option>
+                                <option value="45">Front-Left quartering</option>
+                                <option value="90">Left-to-Right crosswind</option>
+                                <option value="135">Back-Left quartering</option>
+                                <option value="180">Tailwind (behind you)</option>
+                                <option value="225">Back-Right quartering</option>
+                                <option value="270">Right-to-Left crosswind</option>
+                                <option value="315">Front-Right quartering</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Altitude</label>
+                            <input type="range" id="altitude" min="0" max="7000" value="0" step="100">
+                            <span class="range-value" id="altitude-val">Sea level</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Humidity</label>
+                            <input type="range" id="humidity" min="10" max="100" value="50">
+                            <span class="range-value" id="humidity-val">50%</span>
+                        </div>
                     </div>
                 </div>
 

@@ -228,11 +228,53 @@ function getClubForDistance(targetYards) {
 
 // Current state
 let currentScenario = 0;
+let currentWeatherSource = 'manual';  // 'manual', 'location', or 'city'
+let fetchedWeatherData = null;        // Stores weather data from API
+
+// Popular US cities for autocomplete (matches backend CITY_ALTITUDES)
+const CITY_LIST = [
+    { city: 'Phoenix', state: 'AZ', altitude: 1086 },
+    { city: 'Denver', state: 'CO', altitude: 5280 },
+    { city: 'Scottsdale', state: 'AZ', altitude: 1257 },
+    { city: 'Las Vegas', state: 'NV', altitude: 2001 },
+    { city: 'Los Angeles', state: 'CA', altitude: 285 },
+    { city: 'Miami', state: 'FL', altitude: 6 },
+    { city: 'New York', state: 'NY', altitude: 33 },
+    { city: 'Chicago', state: 'IL', altitude: 594 },
+    { city: 'Atlanta', state: 'GA', altitude: 1050 },
+    { city: 'Dallas', state: 'TX', altitude: 430 },
+    { city: 'Seattle', state: 'WA', altitude: 175 },
+    { city: 'Boston', state: 'MA', altitude: 141 },
+    { city: 'San Francisco', state: 'CA', altitude: 52 },
+    { city: 'Austin', state: 'TX', altitude: 489 },
+    { city: 'Portland', state: 'OR', altitude: 50 },
+    { city: 'Salt Lake City', state: 'UT', altitude: 4226 },
+    { city: 'Albuquerque', state: 'NM', altitude: 5312 },
+    { city: 'Tucson', state: 'AZ', altitude: 2389 },
+    { city: 'San Diego', state: 'CA', altitude: 62 },
+    { city: 'Orlando', state: 'FL', altitude: 82 },
+    { city: 'Houston', state: 'TX', altitude: 80 },
+    { city: 'Nashville', state: 'TN', altitude: 597 },
+    { city: 'Charlotte', state: 'NC', altitude: 751 },
+    { city: 'Minneapolis', state: 'MN', altitude: 830 },
+    { city: 'Detroit', state: 'MI', altitude: 600 },
+    { city: 'Philadelphia', state: 'PA', altitude: 39 },
+    { city: 'Washington', state: 'DC', altitude: 125 },
+    { city: 'Tampa', state: 'FL', altitude: 48 },
+    { city: 'Raleigh', state: 'NC', altitude: 315 },
+    { city: 'Indianapolis', state: 'IN', altitude: 715 },
+    { city: 'Wellington', state: 'FL', altitude: 20 },
+    { city: 'West Palm Beach', state: 'FL', altitude: 21 },
+    { city: 'Fort Lauderdale', state: 'FL', altitude: 9 },
+    { city: 'Jacksonville', state: 'FL', altitude: 12 },
+    { city: 'Boca Raton', state: 'FL', altitude: 13 },
+];
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
     loadScenario(0);
     setupSliderListeners();
+    setupCityAutocomplete();
 });
 
 // Load a preset scenario
@@ -599,6 +641,9 @@ function showCustomPanel() {
         card.classList.remove('active');
     });
     document.querySelector('.custom-card').classList.add('active');
+
+    // Reset to manual mode when opening the panel
+    setWeatherSource('manual');
 }
 
 function hideCustomPanel() {
@@ -656,6 +701,12 @@ async function simulateCustom() {
     const club = CLUB_DATA[clubKey];
     const targetCarry = parseInt(document.getElementById('carry-distance').value);
 
+    // Check if we need live weather data but don't have it
+    if (currentWeatherSource !== 'manual' && !fetchedWeatherData) {
+        alert('Please fetch weather data first by clicking "Get Weather" or "Use My Current Location".');
+        return;
+    }
+
     // Scale ball speed to achieve desired carry
     const carryRatio = targetCarry / club.carry;
     const scaledBallSpeed = Math.round(club.ballSpeed * Math.sqrt(carryRatio));
@@ -668,19 +719,40 @@ async function simulateCustom() {
         direction_deg: 0
     };
 
-    const conditions = {
-        wind_speed_mph: parseFloat(document.getElementById('wind-speed').value),
-        wind_direction_deg: parseFloat(document.getElementById('wind-direction').value),
-        temperature_f: parseFloat(document.getElementById('temperature').value),
-        altitude_ft: parseFloat(document.getElementById('altitude').value),
-        humidity_pct: parseFloat(document.getElementById('humidity').value),
-        pressure_inhg: 29.92
-    };
+    // Use fetched weather data if available, otherwise use manual slider values
+    let conditions;
+    let locationName = 'Custom';
+
+    if (currentWeatherSource !== 'manual' && fetchedWeatherData) {
+        // Use API data directly for more accuracy
+        conditions = {
+            wind_speed_mph: fetchedWeatherData.wind_speed_mph,
+            wind_direction_deg: fetchedWeatherData.wind_direction_deg,
+            temperature_f: fetchedWeatherData.temperature_f,
+            altitude_ft: fetchedWeatherData.altitude_ft,
+            humidity_pct: fetchedWeatherData.humidity_pct,
+            pressure_inhg: fetchedWeatherData.pressure_inhg
+        };
+        // Extract city name for display
+        locationName = fetchedWeatherData.location.split(',')[0];
+    } else {
+        conditions = {
+            wind_speed_mph: parseFloat(document.getElementById('wind-speed').value),
+            wind_direction_deg: parseFloat(document.getElementById('wind-direction').value),
+            temperature_f: parseFloat(document.getElementById('temperature').value),
+            altitude_ft: parseFloat(document.getElementById('altitude').value),
+            humidity_pct: parseFloat(document.getElementById('humidity').value),
+            pressure_inhg: 29.92
+        };
+    }
 
     // Update header
-    document.getElementById('scenario-title').textContent = `${club.name} • ${targetCarry} Yards • Custom`;
+    document.getElementById('scenario-title').textContent = `${club.name} • ${targetCarry} Yards • ${locationName}`;
+    const descriptionSuffix = currentWeatherSource !== 'manual' && fetchedWeatherData
+        ? `Using live weather from ${fetchedWeatherData.location}. ${fetchedWeatherData.conditions_text}.`
+        : 'See how your custom weather conditions affect the shot.';
     document.getElementById('scenario-description').textContent =
-        `Your ${club.name} that normally carries ${targetCarry} yards. See how your custom weather conditions affect the shot.`;
+        `Your ${club.name} that normally carries ${targetCarry} yards. ${descriptionSuffix}`;
 
     showLoading();
     hideCustomPanel();
@@ -732,4 +804,310 @@ function showLoading() {
 
 function hideLoading() {
     document.getElementById('loading').classList.remove('active');
+}
+
+// Weather Source Management
+function setWeatherSource(source) {
+    currentWeatherSource = source;
+    fetchedWeatherData = null;  // Reset fetched data when changing source
+
+    // Update toggle button states
+    document.querySelectorAll('.source-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.source === source);
+    });
+
+    // Show/hide location input section
+    const locationSection = document.getElementById('location-input-section');
+    const cityGroup = document.getElementById('city-input-group');
+    const locationGroup = document.getElementById('current-location-group');
+    const weatherControls = document.getElementById('weather-controls');
+    const weatherStatus = document.getElementById('weather-status');
+
+    if (source === 'manual') {
+        locationSection.style.display = 'none';
+        weatherControls.classList.remove('disabled');
+        weatherStatus.style.display = 'none';
+    } else {
+        locationSection.style.display = 'block';
+        weatherControls.classList.add('disabled');
+
+        if (source === 'city') {
+            cityGroup.style.display = 'block';
+            locationGroup.style.display = 'none';
+        } else if (source === 'location') {
+            cityGroup.style.display = 'none';
+            locationGroup.style.display = 'block';
+        }
+    }
+}
+
+// Fetch weather by city name
+async function fetchWeatherByCity() {
+    const cityInput = document.getElementById('city-input');
+    const city = cityInput.value.trim();
+
+    if (!city) {
+        showWeatherStatus('error', 'Please enter a city name');
+        return;
+    }
+
+    showWeatherStatus('loading', 'Fetching weather data...');
+
+    try {
+        const response = await fetch(`${API_BASE}/v1/conditions?city=${encodeURIComponent(city)}`);
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Failed to fetch weather');
+        }
+
+        const data = await response.json();
+        fetchedWeatherData = data;
+        updateWeatherControlsFromAPI(data);
+        showWeatherStatus('success', `Weather loaded for <span class="location-name">${data.location}</span><br>${data.conditions_text}, ${Math.round(data.temperature_f)}°F`);
+
+    } catch (error) {
+        console.error('Weather fetch error:', error);
+        showWeatherStatus('error', `Could not fetch weather: ${error.message}`);
+        fetchedWeatherData = null;
+    }
+}
+
+// Fetch weather by current location (geolocation)
+async function fetchWeatherByCurrentLocation() {
+    if (!navigator.geolocation) {
+        showWeatherStatus('error', 'Geolocation is not supported by your browser');
+        return;
+    }
+
+    showWeatherStatus('loading', 'Getting your location...');
+
+    navigator.geolocation.getCurrentPosition(
+        async (position) => {
+            const { latitude, longitude } = position.coords;
+
+            showWeatherStatus('loading', 'Fetching weather data...');
+
+            try {
+                // Try the dedicated coordinates endpoint first, fall back to city endpoint with lat,lon
+                let response = await fetch(`${API_BASE}/v1/conditions/coords?lat=${latitude}&lon=${longitude}`);
+
+                // If coords endpoint doesn't exist (404), fall back to using lat,lon as city query
+                if (response.status === 404) {
+                    response = await fetch(`${API_BASE}/v1/conditions?city=${latitude},${longitude}`);
+                }
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Failed to fetch weather');
+                }
+
+                const data = await response.json();
+                fetchedWeatherData = data;
+                updateWeatherControlsFromAPI(data);
+                showWeatherStatus('success', `Weather loaded for <span class="location-name">${data.location}</span><br>${data.conditions_text}, ${Math.round(data.temperature_f)}°F`);
+
+            } catch (error) {
+                console.error('Weather fetch error:', error);
+                showWeatherStatus('error', `Could not fetch weather: ${error.message}`);
+                fetchedWeatherData = null;
+            }
+        },
+        (error) => {
+            let message = 'Could not get your location';
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    message = 'Location access was denied. Please enable location permissions.';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    message = 'Location information is unavailable.';
+                    break;
+                case error.TIMEOUT:
+                    message = 'Location request timed out.';
+                    break;
+            }
+            showWeatherStatus('error', message);
+            fetchedWeatherData = null;
+        },
+        {
+            enableHighAccuracy: true,  // Request high accuracy for better location
+            timeout: 10000,
+            maximumAge: 60000  // Cache location for 1 minute
+        }
+    );
+}
+
+// Update the weather controls to show fetched values (visual feedback)
+function updateWeatherControlsFromAPI(data) {
+    // Update slider values to match API data
+    const tempSlider = document.getElementById('temperature');
+    const windSlider = document.getElementById('wind-speed');
+    const altSlider = document.getElementById('altitude');
+    const humSlider = document.getElementById('humidity');
+    const windDirSelect = document.getElementById('wind-direction');
+
+    // Set temperature (clamp to slider range)
+    const temp = Math.max(30, Math.min(110, Math.round(data.temperature_f)));
+    tempSlider.value = temp;
+    document.getElementById('temperature-val').textContent = `${temp}°F`;
+
+    // Set wind speed (clamp to slider range)
+    const wind = Math.max(0, Math.min(35, Math.round(data.wind_speed_mph)));
+    windSlider.value = wind;
+    document.getElementById('wind-speed-val').textContent = `${wind} mph`;
+
+    // Set altitude (clamp to slider range)
+    const alt = Math.max(0, Math.min(7000, Math.round(data.altitude_ft)));
+    altSlider.value = alt;
+    document.getElementById('altitude-val').textContent = alt === 0 ? 'Sea level' : `${alt.toLocaleString()} ft`;
+
+    // Set humidity (clamp to slider range)
+    const hum = Math.max(10, Math.min(100, Math.round(data.humidity_pct)));
+    humSlider.value = hum;
+    document.getElementById('humidity-val').textContent = `${hum}%`;
+
+    // Set wind direction to nearest option
+    const windDir = data.wind_direction_deg;
+    const options = [0, 45, 90, 135, 180, 225, 270, 315];
+    const closest = options.reduce((prev, curr) =>
+        Math.abs(curr - windDir) < Math.abs(prev - windDir) ? curr : prev
+    );
+    windDirSelect.value = closest;
+}
+
+// Show weather status message
+function showWeatherStatus(type, message) {
+    const status = document.getElementById('weather-status');
+    const icon = document.getElementById('weather-status-icon');
+    const text = document.getElementById('weather-status-text');
+
+    status.style.display = 'flex';
+    status.className = 'weather-status ' + type;
+
+    switch (type) {
+        case 'loading':
+            icon.textContent = '⏳';
+            break;
+        case 'success':
+            icon.textContent = '✅';
+            break;
+        case 'error':
+            icon.textContent = '❌';
+            break;
+    }
+
+    text.innerHTML = message;
+}
+
+// City Autocomplete Functions
+function setupCityAutocomplete() {
+    const input = document.getElementById('city-input');
+    const suggestions = document.getElementById('city-suggestions');
+
+    if (!input || !suggestions) return;
+
+    let debounceTimer;
+
+    input.addEventListener('input', (e) => {
+        clearTimeout(debounceTimer);
+        const query = e.target.value.trim().toLowerCase();
+
+        if (query.length < 2) {
+            hideCitySuggestions();
+            return;
+        }
+
+        debounceTimer = setTimeout(() => {
+            showCitySuggestions(query);
+        }, 150);
+    });
+
+    input.addEventListener('focus', () => {
+        const query = input.value.trim().toLowerCase();
+        if (query.length >= 2) {
+            showCitySuggestions(query);
+        }
+    });
+
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.city-input-container')) {
+            hideCitySuggestions();
+        }
+    });
+
+    // Handle keyboard navigation
+    input.addEventListener('keydown', (e) => {
+        const items = suggestions.querySelectorAll('.city-suggestion-item');
+        const activeItem = suggestions.querySelector('.city-suggestion-item.active');
+        let activeIndex = Array.from(items).indexOf(activeItem);
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (activeIndex < items.length - 1) {
+                items[activeIndex]?.classList.remove('active');
+                items[activeIndex + 1]?.classList.add('active');
+            } else if (activeIndex === -1 && items.length > 0) {
+                items[0]?.classList.add('active');
+            }
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (activeIndex > 0) {
+                items[activeIndex]?.classList.remove('active');
+                items[activeIndex - 1]?.classList.add('active');
+            }
+        } else if (e.key === 'Enter') {
+            if (activeItem) {
+                e.preventDefault();
+                selectCity(activeItem.dataset.city, activeItem.dataset.state);
+            }
+        } else if (e.key === 'Escape') {
+            hideCitySuggestions();
+        }
+    });
+}
+
+function showCitySuggestions(query) {
+    const suggestions = document.getElementById('city-suggestions');
+
+    // Filter cities that match the query
+    const matches = CITY_LIST.filter(item => {
+        const cityMatch = item.city.toLowerCase().includes(query);
+        const stateMatch = item.state.toLowerCase().includes(query);
+        const fullMatch = `${item.city}, ${item.state}`.toLowerCase().includes(query);
+        return cityMatch || stateMatch || fullMatch;
+    }).slice(0, 6);  // Limit to 6 suggestions
+
+    if (matches.length === 0) {
+        hideCitySuggestions();
+        return;
+    }
+
+    suggestions.innerHTML = matches.map(item => `
+        <div class="city-suggestion-item"
+             data-city="${item.city}"
+             data-state="${item.state}"
+             onclick="selectCity('${item.city}', '${item.state}')">
+            <div class="city-name">${item.city}, ${item.state}</div>
+            <div class="city-details">${item.altitude.toLocaleString()} ft elevation</div>
+        </div>
+    `).join('');
+
+    suggestions.classList.add('active');
+}
+
+function hideCitySuggestions() {
+    const suggestions = document.getElementById('city-suggestions');
+    if (suggestions) {
+        suggestions.classList.remove('active');
+    }
+}
+
+function selectCity(city, state) {
+    const input = document.getElementById('city-input');
+    input.value = `${city}, ${state}`;
+    hideCitySuggestions();
+
+    // Automatically fetch weather for the selected city
+    fetchWeatherByCity();
 }

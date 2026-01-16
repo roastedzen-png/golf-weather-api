@@ -691,6 +691,209 @@ body {
     background: var(--primary-dark);
 }
 
+/* Weather Source Toggle */
+.weather-source-toggle {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.source-btn {
+    flex: 1;
+    padding: 0.6rem 0.5rem;
+    background: var(--bg-dark);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.source-btn:hover {
+    border-color: var(--text-muted);
+    color: var(--text-primary);
+}
+
+.source-btn.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+/* Location Input Section */
+.location-input-section {
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: var(--bg-dark);
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+}
+
+.city-search-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.city-input-container {
+    position: relative;
+    width: 100%;
+}
+
+.city-search-wrapper input {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    box-sizing: border-box;
+}
+
+.city-search-wrapper input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+/* City Autocomplete Dropdown */
+.city-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 0.5rem 0.5rem;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 100;
+    display: none;
+}
+
+.city-suggestions.active {
+    display: block;
+}
+
+.city-suggestion-item {
+    padding: 0.75rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border);
+}
+
+.city-suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.city-suggestion-item:hover,
+.city-suggestion-item.active {
+    background: var(--bg-card-hover);
+}
+
+.city-suggestion-item .city-name {
+    font-weight: 500;
+}
+
+.city-suggestion-item .city-details {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
+}
+
+.btn-fetch-weather {
+    padding: 0.75rem 1rem;
+    background: var(--secondary);
+    border: none;
+    border-radius: 0.5rem;
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+}
+
+.btn-fetch-weather:hover {
+    background: #2563eb;
+}
+
+.btn-fetch-weather.full-width {
+    width: 100%;
+}
+
+.btn-fetch-weather:disabled {
+    background: var(--border);
+    cursor: not-allowed;
+}
+
+/* Weather Status Display */
+.weather-status {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid var(--primary);
+    border-radius: 0.5rem;
+}
+
+.weather-status.error {
+    background: rgba(248, 113, 113, 0.1);
+    border-color: var(--negative);
+}
+
+.weather-status.loading {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: var(--secondary);
+}
+
+.weather-status-icon {
+    font-size: 1.25rem;
+}
+
+.weather-status-text {
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+.weather-status-text .location-name {
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.weather-status.error .weather-status-text {
+    color: var(--negative);
+}
+
+/* Weather Controls Disabled State */
+.weather-controls.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    position: relative;
+}
+
+.weather-controls.disabled::after {
+    content: "Using live weather data";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--bg-dark);
+    color: var(--text-muted);
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border: 1px solid var(--border);
+}
+
 /* Modal */
 .modal-overlay {
     position: fixed;
