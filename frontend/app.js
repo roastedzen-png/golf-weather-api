@@ -326,24 +326,30 @@ function updateDisplay(data, scenario) {
     const elevationFt = scenario.elevation_change_ft || 0;
 
     // Calculate distances
-    const holeDistance = scenario.targetCarry;  // The actual hole distance (e.g., 107 yards)
+    const holeDistance = scenario.targetCarry;  // The actual hole distance (e.g., 175 yards)
     const elevationEffect = Math.round(elevationFt / 3);  // ~1 yard per 3 feet (negative = plays shorter)
-    const effectiveDistance = holeDistance + elevationEffect;  // What you need to hit (e.g., 90 yards)
+    const effectiveDistance = holeDistance + elevationEffect;  // What you need to hit
 
-    // Get the right club for the effective distance (no weather)
+    // Get the club that normally hits this distance (in calm conditions)
     const standardClub = getClubForDistance(effectiveDistance);
     const standardClubDistance = CLUB_DISTANCES[standardClub];
 
-    // Weather effect from API (how much wind/temp changes carry)
+    // Weather effect from API (how much wind/temp/altitude changes carry)
+    // Positive = ball flies FURTHER, Negative = ball flies SHORTER
     const weatherEffect = Math.round(adjusted.carry_yards - baseline.carry_yards);
 
-    // With weather, you need to hit a different distance to land at the same spot
-    // If weather costs you 7 yards, you need a club that goes 7 yards further
+    // What club should you hit to reach the TARGET in these conditions?
+    // If weather ADDS distance (weatherEffect > 0), you need a SHORTER club (less distance)
+    // If weather SUBTRACTS distance (weatherEffect < 0), you need a LONGER club (more distance)
+    //
+    // Example: Target = 175 yards, weather adds +6 yards
+    // You need a club that normally goes 175 - 6 = 169 yards
+    // Because that club + 6 yards of weather boost = 175 yards at the target
     const adjustedNeededDistance = effectiveDistance - weatherEffect;
     const adjustedClub = getClubForDistance(adjustedNeededDistance);
     const adjustedClubDistance = CLUB_DISTANCES[adjustedClub];
 
-    // Standard stats (no weather, with elevation)
+    // Standard stats (no weather, with elevation) - what your normal club does in calm
     document.getElementById('std-carry').textContent = effectiveDistance;
     document.getElementById('std-total').textContent = effectiveDistance + 10;  // Approximate roll
     document.getElementById('std-apex').textContent = Math.round(baseline.apex_height_yards);
@@ -353,19 +359,19 @@ function updateDisplay(data, scenario) {
     document.getElementById('std-club').textContent = standardClub;
 
     // Adjusted stats (with weather)
-    // Show what happens when you hit the RECOMMENDED club in these conditions
-    // The adjusted club's stock distance + weather effect should land near the target
-    const adjustedClubCarryWithWeather = adjustedClubDistance + weatherEffect;
-    document.getElementById('adj-carry').textContent = adjustedClubCarryWithWeather;
-    document.getElementById('adj-total').textContent = adjustedClubCarryWithWeather + 10;
+    // Show what happens if you hit your STANDARD club in these conditions
+    // This helps golfers understand: "if I hit my normal club, where will it land?"
+    const standardClubWithWeather = standardClubDistance + weatherEffect;
+    document.getElementById('adj-carry').textContent = standardClubWithWeather;
+    document.getElementById('adj-total').textContent = standardClubWithWeather + 10;
     document.getElementById('adj-apex').textContent = Math.round(adjusted.apex_height_yards);
     document.getElementById('adj-drift').textContent = Math.round(Math.abs(adjusted.lateral_drift_yards));
     document.getElementById('adj-flight').textContent = adjusted.flight_time_seconds.toFixed(1);
     document.getElementById('adj-land').textContent = Math.round(adjusted.landing_angle_deg) + '°';
 
-    // Build recommendation
+    // Build recommendation - what club to hit to reach the TARGET
     const driftYards = adjusted.lateral_drift_yards;
-    const recommendation = buildRecommendation(standardClub, adjustedClub, weatherEffect, driftYards, elevationFt, holeDistance, effectiveDistance);
+    const recommendation = buildRecommendation(standardClub, adjustedClub, weatherEffect, driftYards, elevationFt, holeDistance, effectiveDistance, adjustedClubDistance);
     document.getElementById('adj-club').textContent = recommendation.text;
 
     // Generate dynamic explanations
@@ -376,8 +382,9 @@ function updateDisplay(data, scenario) {
     const physicsExplanation = generatePhysicsExplanation(scenario, impact);
     document.getElementById('physics-text').innerHTML = physicsExplanation;
 
-    // Deltas (show difference from target - positive means overshoots, negative means short)
-    const carryDelta = adjustedClubCarryWithWeather - effectiveDistance;
+    // Deltas (show weather effect - how much further/shorter your standard club goes)
+    // This shows the golfer: "Your normal club will fly X yards further/shorter"
+    const carryDelta = standardClubWithWeather - effectiveDistance;
     updateDelta('delta-carry', carryDelta);
     updateDelta('delta-total', carryDelta);
     updateDelta('delta-apex', adjusted.apex_height_yards - baseline.apex_height_yards);
@@ -424,32 +431,36 @@ function updateDisplay(data, scenario) {
 }
 
 // Build club recommendation text
-function buildRecommendation(standardClub, adjustedClub, weatherEffect, driftYards, elevationFt, holeDistance, effectiveDistance) {
+// The recommendation answers: "What club should I hit to reach my TARGET distance?"
+function buildRecommendation(standardClub, adjustedClub, weatherEffect, driftYards, elevationFt, holeDistance, effectiveDistance, adjustedClubDistance) {
     let text = '';
     let advice = '';
 
+    // Club order from shortest to longest
+    const clubOrder = ['LW', 'SW', 'GW', 'PW', '9-Iron', '8-Iron', '7-Iron', '6-Iron', '5-Iron', '4-Iron', '5-Wood', '3-Wood', 'Driver'];
+    const stdIdx = clubOrder.indexOf(standardClub);
+    const adjIdx = clubOrder.indexOf(adjustedClub);
+    const clubDiff = adjIdx - stdIdx;  // Positive = longer club, Negative = shorter club
+
     if (standardClub === adjustedClub) {
         text = `${adjustedClub} (same club)`;
-        advice = `Stick with your ${adjustedClub}.`;
+        advice = `Stick with your ${adjustedClub} - conditions don't significantly change your distance.`;
+    } else if (weatherEffect > 0) {
+        // Weather ADDS distance (altitude, heat, tailwind)
+        // Need a SHORTER club (lower index) to hit the target
+        const clubsDown = Math.abs(clubDiff);
+        text = `${adjustedClub} (-${clubsDown} club${clubsDown > 1 ? 's' : ''})`;
+        advice = `Club DOWN to ${adjustedClub}. The conditions add ~${weatherEffect} yards, so your ${adjustedClub} (normally ${adjustedClubDistance} yds) will carry to the target.`;
     } else {
-        // Determine if clubbing up or down
-        const clubOrder = ['LW', 'SW', 'GW', 'PW', '9-Iron', '8-Iron', '7-Iron', '6-Iron', '5-Iron', '4-Iron', '5-Wood', '3-Wood', 'Driver'];
-        const stdIdx = clubOrder.indexOf(standardClub);
-        const adjIdx = clubOrder.indexOf(adjustedClub);
-        const diff = adjIdx - stdIdx;
-
-        if (diff > 0) {
-            text = `${adjustedClub} (+${diff} club${diff > 1 ? 's' : ''})`;
-            advice = `Club up to ${adjustedClub} to compensate for the ${Math.abs(weatherEffect)}-yard loss from weather.`;
-        } else {
-            text = `${adjustedClub} (${diff} club${diff < -1 ? 's' : ''})`;
-            advice = `Club down to ${adjustedClub} - weather adds ${weatherEffect} yards to your shot.`;
-        }
+        // Weather SUBTRACTS distance (cold, headwind)
+        // Need a LONGER club (higher index) to hit the target
+        const clubsUp = Math.abs(clubDiff);
+        text = `${adjustedClub} (+${clubsUp} club${clubsUp > 1 ? 's' : ''})`;
+        advice = `Club UP to ${adjustedClub}. The conditions cost you ~${Math.abs(weatherEffect)} yards, so you need more club to reach ${effectiveDistance} yards.`;
     }
 
     // Add elevation context
     if (elevationFt !== 0) {
-        const elevYards = Math.abs(Math.round(elevationFt / 3));
         if (elevationFt < 0) {
             advice += ` The ${Math.abs(elevationFt)} ft drop makes this ${holeDistance}-yard hole play like ${effectiveDistance} yards.`;
         } else {
