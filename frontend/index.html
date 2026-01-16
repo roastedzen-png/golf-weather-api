@@ -120,20 +120,23 @@
 
         <!-- Center Content -->
         <section class="content">
-            <!-- Scenario Header -->
-            <div class="content-header">
-                <h1 id="scenario-title">7-Iron • 165 Yards • Strong Headwind</h1>
-                <p id="scenario-description">Your standard 7-iron flies 165 yards in calm conditions. But what happens when you're facing a 20 mph headwind at sea level? The ball fights through dense air and loses significant distance.</p>
-            </div>
+            <!-- Scenario Header - Two column layout -->
+            <div class="scenario-header-grid">
+                <div class="content-header">
+                    <h1 id="scenario-title">7-Iron • 165 Yards • Strong Headwind</h1>
+                    <p id="scenario-description">Your standard 7-iron flies 165 yards in calm conditions. But what happens when you're facing a 20 mph headwind at sea level? The ball fights through dense air and loses significant distance.</p>
+                </div>
 
-            <!-- Current Conditions - Above cards -->
-            <div class="conditions-bar">
-                <h3>Current Conditions</h3>
-                <div class="conditions-pills">
-                    <span class="condition-pill" id="cond-temp">🌡️ 70°F</span>
-                    <span class="condition-pill" id="cond-wind">💨 20 mph headwind</span>
-                    <span class="condition-pill" id="cond-altitude">⛰️ Sea level</span>
-                    <span class="condition-pill" id="cond-humidity">💧 50% humidity</span>
+                <!-- Current Conditions - Next to title -->
+                <div class="conditions-bar">
+                    <h3>Current Conditions</h3>
+                    <div class="conditions-pills">
+                        <span class="condition-pill" id="cond-temp">🌡️ 70°F</span>
+                        <span class="condition-pill" id="cond-wind">💨 20 mph headwind</span>
+                        <span class="condition-pill" id="cond-altitude">⛰️ Sea level</span>
+                        <span class="condition-pill" id="cond-humidity">💧 50% humidity</span>
+                        <span class="condition-pill" id="cond-elevation" style="display: none;">📐 0 ft</span>
+                    </div>
                 </div>
             </div>
 
@@ -270,6 +273,13 @@
                             <div class="impact-bar positive" id="bar-humidity" style="width: 2%"></div>
                         </div>
                         <span class="impact-value" id="impact-humidity">+0.3 yds</span>
+                    </div>
+                    <div class="impact-item" id="elevation-impact-item" style="display: none;">
+                        <span class="impact-label">Elevation</span>
+                        <div class="impact-bar-container">
+                            <div class="impact-bar positive" id="bar-elevation" style="width: 0%"></div>
+                        </div>
+                        <span class="impact-value" id="impact-elevation">+0.0 yds</span>
                     </div>
                 </div>
             </div>

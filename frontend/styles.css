@@ -230,8 +230,17 @@ body {
     overflow-y: auto;
 }
 
+/* Scenario Header Grid - Title/Description on left, Conditions on right */
+.scenario-header-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2rem;
+    align-items: start;
+    margin-bottom: 1.5rem;
+}
+
 .content-header {
-    margin-bottom: 2rem;
+    margin-bottom: 0;
 }
 
 .content-header h1 {
@@ -244,7 +253,7 @@ body {
     color: var(--text-secondary);
     font-size: 0.9rem;
     line-height: 1.6;
-    max-width: 700px;
+    max-width: 500px;
 }
 
 /* Comparison Cards */
@@ -378,37 +387,45 @@ body {
     margin-bottom: 1.5rem;
 }
 
-/* Conditions Bar */
+/* Conditions Bar - Now positioned next to title */
 .conditions-bar {
     background: var(--bg-card);
     border-radius: 0.75rem;
-    padding: 1rem 1.5rem;
+    padding: 1rem 1.25rem;
     border: 1px solid var(--border);
-    margin-bottom: 1.5rem;
+    min-width: 280px;
+    max-width: 320px;
 }
 
 .conditions-bar h3 {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     font-weight: 600;
     color: var(--text-secondary);
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.6rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 .conditions-pills {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.4rem;
     flex-wrap: wrap;
 }
 
 .condition-pill {
-    font-size: 0.8rem;
-    padding: 0.4rem 0.7rem;
+    font-size: 0.75rem;
+    padding: 0.35rem 0.6rem;
     background: var(--bg-dark);
     border-radius: 2rem;
     color: var(--text-primary);
     border: 1px solid var(--border);
+}
+
+/* Elevation pill special styling */
+.condition-pill#cond-elevation {
+    background: rgba(168, 85, 247, 0.15);
+    border-color: #a855f7;
+    color: #d8b4fe;
 }
 
 /* Impact Breakdown - Full width */
@@ -750,6 +767,19 @@ body {
 
     .explanation-grid {
         grid-template-columns: 1fr;
+    }
+
+    .scenario-header-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .conditions-bar {
+        max-width: none;
+    }
+
+    .content-header p {
+        max-width: 700px;
     }
 }
 

@@ -99,7 +99,7 @@ const scenarios = [
     {
         id: 4,
         title: "Pebble Beach #7 • PW • 107 Yards",
-        description: "The famous downhill par 3 overlooking the Pacific Ocean. Coastal winds swirl around this exposed green, making club selection tricky even for the pros.",
+        description: "The famous downhill par 3 overlooking the Pacific Ocean. With a dramatic 50-foot drop from tee to green, the ball stays airborne longer. Coastal winds swirl around this exposed green, making club selection tricky even for the pros.",
         // Calibrated to produce ~107 yard baseline carry
         shot: {
             ball_speed_mph: 102,
@@ -117,12 +117,13 @@ const scenarios = [
             pressure_inhg: 30.0
         },
         standardClub: "PW",
-        targetCarry: 107
+        targetCarry: 107,
+        elevation_change_ft: -50  // 50-foot drop from tee to green
     },
     {
         id: 5,
         title: "St Andrews #11 • 7-Iron • 172 Yards",
-        description: "The Old Course's famous par 3, with its hidden Strath bunker and swirling Scottish winds. Links golf at its finest - and most unpredictable.",
+        description: "The Old Course's famous par 3, with its hidden Strath bunker and swirling Scottish winds. The hole plays slightly uphill (~8 feet), requiring extra club in the already challenging Scottish conditions.",
         // Calibrated to produce ~172 yard baseline carry
         shot: {
             ball_speed_mph: 170,
@@ -140,12 +141,13 @@ const scenarios = [
             pressure_inhg: 29.8
         },
         standardClub: "7-Iron",
-        targetCarry: 172
+        targetCarry: 172,
+        elevation_change_ft: 8  // Slightly uphill
     },
     {
         id: 6,
         title: "TPC Sawgrass #17 • 9-Iron • 137 Yards",
-        description: "The most famous island green in golf. Wind swirls in the amphitheater setting, and there's no bailout. Miss the green and you're wet.",
+        description: "The most famous island green in golf. The hole is essentially flat (no elevation change), but wind swirls unpredictably in the amphitheater setting. There's no bailout - miss the green and you're wet.",
         // Calibrated to produce ~137 yard baseline carry
         shot: {
             ball_speed_mph: 129,
@@ -163,7 +165,8 @@ const scenarios = [
             pressure_inhg: 29.95
         },
         standardClub: "9-Iron",
-        targetCarry: 137
+        targetCarry: 137,
+        elevation_change_ft: 0  // Essentially flat
     }
 ];
 
@@ -285,23 +288,51 @@ function updateDisplay(data, scenario) {
     document.getElementById('cond-altitude').textContent = conditions.altitude_ft > 100 ? `⛰️ ${conditions.altitude_ft.toLocaleString()} ft` : '⛰️ Sea level';
     document.getElementById('cond-humidity').textContent = `💧 ${conditions.humidity_pct}% humidity`;
 
+    // Elevation change pill (only for scenarios with elevation data)
+    const elevationPill = document.getElementById('cond-elevation');
+    if (scenario.elevation_change_ft !== undefined && scenario.elevation_change_ft !== 0) {
+        const elevFt = scenario.elevation_change_ft;
+        const elevText = elevFt < 0
+            ? `📐 ${Math.abs(elevFt)} ft drop`
+            : `📐 ${elevFt} ft uphill`;
+        elevationPill.textContent = elevText;
+        elevationPill.style.display = 'inline-block';
+    } else {
+        elevationPill.style.display = 'none';
+    }
+
     // Impact breakdown
     updateImpactBar('wind', impact.wind_effect_yards);
     updateImpactBar('temp', impact.temperature_effect_yards);
     updateImpactBar('altitude', impact.altitude_effect_yards);
     updateImpactBar('humidity', impact.humidity_effect_yards);
+
+    // Elevation impact (calculated from physics: ~1 yard per 3 feet of elevation change)
+    const elevationItem = document.getElementById('elevation-impact-item');
+    if (scenario.elevation_change_ft !== undefined && scenario.elevation_change_ft !== 0) {
+        // Downhill (negative elevation) plays shorter, uphill plays longer
+        // Physics: ball in flight longer when dropping, shorter flight when climbing
+        const elevationEffect = -scenario.elevation_change_ft / 3;  // ~1 yard per 3 feet
+        updateImpactBar('elevation', elevationEffect);
+        elevationItem.style.display = 'grid';
+    } else {
+        elevationItem.style.display = 'none';
+    }
 }
 
 // Generate physics explanation based on conditions
 function generatePhysicsExplanation(scenario, impact) {
     const cond = scenario.conditions;
+    const elevationFt = scenario.elevation_change_ft || 0;
+    const elevationEffect = Math.abs(elevationFt / 3);  // ~1 yard per 3 feet
 
-    // Determine the dominant factor
+    // Determine the dominant factor (include elevation)
     const effects = [
         { name: 'wind', value: Math.abs(impact.wind_effect_yards), raw: impact.wind_effect_yards },
         { name: 'temp', value: Math.abs(impact.temperature_effect_yards), raw: impact.temperature_effect_yards },
         { name: 'altitude', value: Math.abs(impact.altitude_effect_yards), raw: impact.altitude_effect_yards },
-        { name: 'humidity', value: Math.abs(impact.humidity_effect_yards), raw: impact.humidity_effect_yards }
+        { name: 'humidity', value: Math.abs(impact.humidity_effect_yards), raw: impact.humidity_effect_yards },
+        { name: 'elevation', value: elevationEffect, raw: elevationFt }
     ];
     effects.sort((a, b) => b.value - a.value);
     const dominant = effects[0];
@@ -340,6 +371,18 @@ function generatePhysicsExplanation(scenario, impact) {
     // Humidity physics (smallest effect)
     else if (dominant.name === 'humidity') {
         explanation = `<strong>Humidity & Air Composition:</strong> Contrary to intuition, humid air is actually <strong>less dense</strong> than dry air. Water molecules (H₂O, mass 18) replace heavier nitrogen (N₂, mass 28) and oxygen (O₂, mass 32) molecules. At ${cond.humidity_pct}% humidity, this slightly reduces air resistance - though the effect is small (typically 1-2 yards).`;
+    }
+    // Elevation change physics
+    else if (dominant.name === 'elevation' && elevationFt !== 0) {
+        if (elevationFt < 0) {
+            // Downhill
+            const playsShorter = Math.abs(elevationFt / 3).toFixed(0);
+            explanation = `<strong>Downhill & Projectile Motion:</strong> With a ${Math.abs(elevationFt)}-foot drop from tee to green, gravity works in your favor. The ball's vertical descent is extended because it has further to fall before landing. Using projectile physics, <strong>every 3 feet of drop adds roughly 1 yard to your carry</strong>. This ${Math.abs(elevationFt)}-foot drop means the hole plays approximately <strong>${playsShorter} yards shorter</strong> than the measured distance.`;
+        } else {
+            // Uphill
+            const playsLonger = Math.abs(elevationFt / 3).toFixed(0);
+            explanation = `<strong>Uphill & Projectile Motion:</strong> With a ${elevationFt}-foot climb from tee to green, gravity works against you. The ball must rise further before reaching the landing zone, which shortens the horizontal distance traveled. Using projectile physics, <strong>every 3 feet of elevation gain costs roughly 1 yard of carry</strong>. This ${elevationFt}-foot climb means the hole plays approximately <strong>${playsLonger} yards longer</strong> than the measured distance.`;
+        }
     }
     // Default explanation
     else {
