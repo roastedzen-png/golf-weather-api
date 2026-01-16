@@ -170,22 +170,59 @@ const scenarios = [
     }
 ];
 
-// Club data for custom scenario builder
-const CLUB_DATA = {
-    'driver':   { ballSpeed: 180, launchAngle: 12, spinRate: 2800, carry: 190, name: 'Driver' },
-    '3-wood':   { ballSpeed: 172, launchAngle: 13, spinRate: 3500, carry: 180, name: '3-Wood' },
-    '5-wood':   { ballSpeed: 165, launchAngle: 14, spinRate: 4000, carry: 170, name: '5-Wood' },
-    '4-iron':   { ballSpeed: 160, launchAngle: 15, spinRate: 4500, carry: 165, name: '4-Iron' },
-    '5-iron':   { ballSpeed: 155, launchAngle: 15, spinRate: 5000, carry: 160, name: '5-Iron' },
-    '6-iron':   { ballSpeed: 150, launchAngle: 16, spinRate: 5500, carry: 150, name: '6-Iron' },
-    '7-iron':   { ballSpeed: 145, launchAngle: 17, spinRate: 6000, carry: 145, name: '7-Iron' },
-    '8-iron':   { ballSpeed: 138, launchAngle: 18, spinRate: 6500, carry: 135, name: '8-Iron' },
-    '9-iron':   { ballSpeed: 130, launchAngle: 19, spinRate: 7000, carry: 125, name: '9-Iron' },
-    'pw':       { ballSpeed: 120, launchAngle: 21, spinRate: 8000, carry: 115, name: 'PW' },
-    'gw':       { ballSpeed: 110, launchAngle: 24, spinRate: 9000, carry: 100, name: 'GW' },
-    'sw':       { ballSpeed: 100, launchAngle: 28, spinRate: 9500, carry: 90, name: 'SW' },
-    'lw':       { ballSpeed: 90,  launchAngle: 32, spinRate: 10000, carry: 75, name: 'LW' }
+// Mid-handicapper stock distances (carry yards)
+// These are the baseline "no weather" distances for club selection
+const CLUB_DISTANCES = {
+    'LW':     75,
+    'SW':     90,
+    'GW':     105,
+    'PW':     120,
+    '9-Iron': 130,
+    '8-Iron': 140,
+    '7-Iron': 150,
+    '6-Iron': 160,
+    '5-Iron': 170,
+    '4-Iron': 180,
+    '5-Wood': 190,
+    '3-Wood': 210,
+    'Driver': 230
 };
+
+// Club data for API calls (ball speed calibrated to produce stock distances)
+const CLUB_DATA = {
+    'driver':   { ballSpeed: 167, launchAngle: 12, spinRate: 2800, carry: 230, name: 'Driver' },
+    '3-wood':   { ballSpeed: 155, launchAngle: 13, spinRate: 3500, carry: 210, name: '3-Wood' },
+    '5-wood':   { ballSpeed: 145, launchAngle: 14, spinRate: 4000, carry: 190, name: '5-Wood' },
+    '4-iron':   { ballSpeed: 138, launchAngle: 15, spinRate: 4500, carry: 180, name: '4-Iron' },
+    '5-iron':   { ballSpeed: 132, launchAngle: 15, spinRate: 5000, carry: 170, name: '5-Iron' },
+    '6-iron':   { ballSpeed: 125, launchAngle: 16, spinRate: 5500, carry: 160, name: '6-Iron' },
+    '7-iron':   { ballSpeed: 118, launchAngle: 17, spinRate: 6000, carry: 150, name: '7-Iron' },
+    '8-iron':   { ballSpeed: 112, launchAngle: 18, spinRate: 6500, carry: 140, name: '8-Iron' },
+    '9-iron':   { ballSpeed: 105, launchAngle: 19, spinRate: 7000, carry: 130, name: '9-Iron' },
+    'pw':       { ballSpeed: 98,  launchAngle: 21, spinRate: 8000, carry: 120, name: 'PW' },
+    'gw':       { ballSpeed: 90,  launchAngle: 24, spinRate: 9000, carry: 105, name: 'GW' },
+    'sw':       { ballSpeed: 82,  launchAngle: 28, spinRate: 9500, carry: 90, name: 'SW' },
+    'lw':       { ballSpeed: 72,  launchAngle: 32, spinRate: 10000, carry: 75, name: 'LW' }
+};
+
+// Get the right club for a given distance
+function getClubForDistance(targetYards) {
+    const clubs = Object.entries(CLUB_DISTANCES).sort((a, b) => a[1] - b[1]);
+
+    // Find the club closest to the target distance
+    let bestClub = clubs[0][0];
+    let bestDiff = Math.abs(clubs[0][1] - targetYards);
+
+    for (const [club, dist] of clubs) {
+        const diff = Math.abs(dist - targetYards);
+        if (diff < bestDiff) {
+            bestDiff = diff;
+            bestClub = club;
+        }
+    }
+
+    return bestClub;
+}
 
 // Current state
 let currentScenario = 0;
@@ -244,37 +281,46 @@ function updateDisplay(data, scenario) {
     const conditions = scenario.conditions;
     const elevationFt = scenario.elevation_change_ft || 0;
 
-    // Calculate effective playing distance (factoring in elevation)
-    // Downhill = plays shorter (add yards to carry for same effect)
-    // Uphill = plays longer (subtract yards from carry for same effect)
-    const elevationEffect = -elevationFt / 3;  // negative elevation = positive carry effect
-    const effectiveCarry = Math.round(baseline.carry_yards + elevationEffect);
-    const effectiveTotal = Math.round(baseline.total_yards + elevationEffect);
+    // Calculate distances
+    const holeDistance = scenario.targetCarry;  // The actual hole distance (e.g., 107 yards)
+    const elevationEffect = Math.round(elevationFt / 3);  // ~1 yard per 3 feet (negative = plays shorter)
+    const effectiveDistance = holeDistance + elevationEffect;  // What you need to hit (e.g., 90 yards)
 
-    // Standard stats (with elevation factored in - this is the "effective" playing distance)
-    document.getElementById('std-carry').textContent = effectiveCarry;
-    document.getElementById('std-total').textContent = effectiveTotal;
+    // Get the right club for the effective distance (no weather)
+    const standardClub = getClubForDistance(effectiveDistance);
+    const standardClubDistance = CLUB_DISTANCES[standardClub];
+
+    // Weather effect from API (how much wind/temp changes carry)
+    const weatherEffect = Math.round(adjusted.carry_yards - baseline.carry_yards);
+
+    // With weather, you need to hit a different distance to land at the same spot
+    // If weather costs you 7 yards, you need a club that goes 7 yards further
+    const adjustedNeededDistance = effectiveDistance - weatherEffect;
+    const adjustedClub = getClubForDistance(adjustedNeededDistance);
+    const adjustedClubDistance = CLUB_DISTANCES[adjustedClub];
+
+    // Standard stats (no weather, with elevation)
+    document.getElementById('std-carry').textContent = effectiveDistance;
+    document.getElementById('std-total').textContent = effectiveDistance + 10;  // Approximate roll
     document.getElementById('std-apex').textContent = Math.round(baseline.apex_height_yards);
-    document.getElementById('std-drift').textContent = Math.round(Math.abs(baseline.lateral_drift_yards));
+    document.getElementById('std-drift').textContent = 0;  // No wind = no drift
     document.getElementById('std-flight').textContent = baseline.flight_time_seconds.toFixed(1);
     document.getElementById('std-land').textContent = Math.round(baseline.landing_angle_deg) + '°';
-    document.getElementById('std-club').textContent = scenario.standardClub;
+    document.getElementById('std-club').textContent = standardClub;
 
-    // Adjusted stats (with weather AND elevation)
-    const adjEffectiveCarry = Math.round(adjusted.carry_yards + elevationEffect);
-    const adjEffectiveTotal = Math.round(adjusted.total_yards + elevationEffect);
-    document.getElementById('adj-carry').textContent = adjEffectiveCarry;
-    document.getElementById('adj-total').textContent = adjEffectiveTotal;
+    // Adjusted stats (with weather)
+    // The ball will carry a different distance due to weather
+    const adjustedCarry = effectiveDistance + weatherEffect;
+    document.getElementById('adj-carry').textContent = adjustedCarry;
+    document.getElementById('adj-total').textContent = adjustedCarry + 10;
     document.getElementById('adj-apex').textContent = Math.round(adjusted.apex_height_yards);
     document.getElementById('adj-drift').textContent = Math.round(Math.abs(adjusted.lateral_drift_yards));
     document.getElementById('adj-flight').textContent = adjusted.flight_time_seconds.toFixed(1);
     document.getElementById('adj-land').textContent = Math.round(adjusted.landing_angle_deg) + '°';
 
-    // Calculate recommended club and generate explanation
-    const carryDiff = adjusted.carry_yards - baseline.carry_yards;
+    // Build recommendation
     const driftYards = adjusted.lateral_drift_yards;
-    // elevationFt already declared at top of function
-    const recommendation = getClubRecommendation(scenario.standardClub, carryDiff, driftYards, scenario.targetCarry, elevationFt);
+    const recommendation = buildRecommendation(standardClub, adjustedClub, weatherEffect, driftYards, elevationFt, holeDistance, effectiveDistance);
     document.getElementById('adj-club').textContent = recommendation.text;
 
     // Generate dynamic explanations
@@ -285,9 +331,9 @@ function updateDisplay(data, scenario) {
     const physicsExplanation = generatePhysicsExplanation(scenario, impact);
     document.getElementById('physics-text').innerHTML = physicsExplanation;
 
-    // Deltas
-    updateDelta('delta-carry', carryDiff);
-    updateDelta('delta-total', adjusted.total_yards - baseline.total_yards);
+    // Deltas (show weather effect)
+    updateDelta('delta-carry', weatherEffect);
+    updateDelta('delta-total', weatherEffect);
     updateDelta('delta-apex', adjusted.apex_height_yards - baseline.apex_height_yards);
     updateDelta('delta-drift', driftYards, true);
     updateDelta('delta-flight', adjusted.flight_time_seconds - baseline.flight_time_seconds);
@@ -321,14 +367,58 @@ function updateDisplay(data, scenario) {
     // Elevation impact (calculated from physics: ~1 yard per 3 feet of elevation change)
     const elevationItem = document.getElementById('elevation-impact-item');
     if (scenario.elevation_change_ft !== undefined && scenario.elevation_change_ft !== 0) {
-        // Downhill (negative elevation) plays shorter, uphill plays longer
-        // Physics: ball in flight longer when dropping, shorter flight when climbing
-        const elevationEffect = -scenario.elevation_change_ft / 3;  // ~1 yard per 3 feet
-        updateImpactBar('elevation', elevationEffect);
+        // Downhill (negative) = plays shorter = positive yards gained
+        // Uphill (positive) = plays longer = negative yards
+        const elevImpact = -elevationEffect;  // Flip sign for display (drop = positive benefit)
+        updateImpactBar('elevation', elevImpact);
         elevationItem.style.display = 'grid';
     } else {
         elevationItem.style.display = 'none';
     }
+}
+
+// Build club recommendation text
+function buildRecommendation(standardClub, adjustedClub, weatherEffect, driftYards, elevationFt, holeDistance, effectiveDistance) {
+    let text = '';
+    let advice = '';
+
+    if (standardClub === adjustedClub) {
+        text = `${adjustedClub} (same club)`;
+        advice = `Stick with your ${adjustedClub}.`;
+    } else {
+        // Determine if clubbing up or down
+        const clubOrder = ['LW', 'SW', 'GW', 'PW', '9-Iron', '8-Iron', '7-Iron', '6-Iron', '5-Iron', '4-Iron', '5-Wood', '3-Wood', 'Driver'];
+        const stdIdx = clubOrder.indexOf(standardClub);
+        const adjIdx = clubOrder.indexOf(adjustedClub);
+        const diff = adjIdx - stdIdx;
+
+        if (diff > 0) {
+            text = `${adjustedClub} (+${diff} club${diff > 1 ? 's' : ''})`;
+            advice = `Club up to ${adjustedClub} to compensate for the ${Math.abs(weatherEffect)}-yard loss from weather.`;
+        } else {
+            text = `${adjustedClub} (${diff} club${diff < -1 ? 's' : ''})`;
+            advice = `Club down to ${adjustedClub} - weather adds ${weatherEffect} yards to your shot.`;
+        }
+    }
+
+    // Add elevation context
+    if (elevationFt !== 0) {
+        const elevYards = Math.abs(Math.round(elevationFt / 3));
+        if (elevationFt < 0) {
+            advice += ` The ${Math.abs(elevationFt)} ft drop makes this ${holeDistance}-yard hole play like ${effectiveDistance} yards.`;
+        } else {
+            advice += ` The ${elevationFt} ft climb makes this ${holeDistance}-yard hole play like ${effectiveDistance} yards.`;
+        }
+    }
+
+    // Add drift advice
+    if (Math.abs(driftYards) > 5) {
+        const aimDirection = driftYards > 0 ? 'left' : 'right';
+        text += `, aim ${Math.abs(Math.round(driftYards))}yds ${aimDirection}`;
+        advice += ` Aim ${Math.abs(Math.round(driftYards))} yards ${aimDirection} to compensate for wind drift.`;
+    }
+
+    return { text, advice };
 }
 
 // Generate physics explanation based on conditions
@@ -458,68 +548,6 @@ function generateExplanation(scenario, impact, baseline, adjusted, recommendatio
     explanation += `<strong>${recommendation.advice}</strong>`;
 
     return explanation;
-}
-
-// Get club recommendation based on weather effect only
-// Note: standardClub is already adjusted for elevation, so we only consider weather here
-function getClubRecommendation(originalClub, carryDiff, driftYards, targetCarry, elevationFt = 0) {
-    const clubOrder = ['LW', 'SW', 'GW', 'PW', '9-Iron', '8-Iron', '7-Iron', '6-Iron', '5-Iron', '4-Iron', '5-Wood', '3-Wood', 'Driver'];
-    const currentIndex = clubOrder.findIndex(c => c.toLowerCase() === originalClub.toLowerCase());
-
-    let text = '';
-    let advice = '';
-    let clubsChange = 0;
-
-    // Only consider weather effect for club recommendation
-    // (standardClub is already adjusted for elevation)
-    // carryDiff is how much weather changes your carry (negative = ball flies shorter)
-    //
-    // Example: Pebble Beach #7
-    // - standardClub = GW (already accounts for 50ft drop)
-    // - carryDiff = -7 (wind makes ball fly 7 yards shorter)
-    // - Since -7 is within threshold, stick with GW
-
-    // Calculate clubs needed based on ~10 yards per club
-    if (carryDiff < -15) {
-        clubsChange = 2;
-    } else if (carryDiff < -7) {
-        clubsChange = 1;
-    } else if (carryDiff > 15) {
-        clubsChange = -2;
-    } else if (carryDiff > 7) {
-        clubsChange = -1;
-    }
-
-    // Build advice string with context about elevation
-    const elevationContext = elevationFt !== 0
-        ? (elevationFt < 0
-            ? ` The ${Math.abs(elevationFt)} ft drop is already factored into your club selection.`
-            : ` The ${elevationFt} ft climb is already factored into your club selection.`)
-        : '';
-
-    if (clubsChange > 0) {
-        const newIndex = Math.min(currentIndex + clubsChange, clubOrder.length - 1);
-        const newClub = clubOrder[newIndex];
-        text = `${newClub} (+${clubsChange} club${clubsChange > 1 ? 's' : ''})`;
-        advice = `Club up to a ${newClub} to compensate for the wind.${elevationContext}`;
-    } else if (clubsChange < 0) {
-        const newIndex = Math.max(currentIndex + clubsChange, 0);
-        const newClub = clubOrder[newIndex];
-        text = `${newClub} (${clubsChange} club${clubsChange < -1 ? 's' : ''})`;
-        advice = `Club down to a ${newClub} - the conditions help your ball fly further.${elevationContext}`;
-    } else {
-        text = `${originalClub} (same club)`;
-        advice = `Stick with your ${originalClub}.${elevationContext}`;
-    }
-
-    // Add drift advice
-    if (Math.abs(driftYards) > 5) {
-        const aimDirection = driftYards > 0 ? 'left' : 'right';
-        text += `, aim ${Math.abs(Math.round(driftYards))}yds ${aimDirection}`;
-        advice += ` Aim ${Math.abs(Math.round(driftYards))} yards ${aimDirection} to compensate for wind drift.`;
-    }
-
-    return { text, advice };
 }
 
 // Helper: Update delta display
