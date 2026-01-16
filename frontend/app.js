@@ -98,9 +98,9 @@ const scenarios = [
     },
     {
         id: 4,
-        title: "Pebble Beach #7 • PW • 107 Yards",
+        title: "Pebble Beach #7 • 107 Yards",
         description: "The famous downhill par 3 overlooking the Pacific Ocean. With a dramatic 50-foot drop from tee to green, the ball stays airborne longer. Coastal winds swirl around this exposed green, making club selection tricky even for the pros.",
-        // Calibrated to produce ~107 yard baseline carry
+        // Calibrated to produce ~107 yard baseline carry (but plays ~90 with elevation)
         shot: {
             ball_speed_mph: 102,
             launch_angle_deg: 22,
@@ -116,15 +116,15 @@ const scenarios = [
             humidity_pct: 75,
             pressure_inhg: 30.0
         },
-        standardClub: "PW",
+        standardClub: "GW",  // 107 yards - 17 yards (50ft drop) = ~90 yards effective
         targetCarry: 107,
         elevation_change_ft: -50  // 50-foot drop from tee to green
     },
     {
         id: 5,
-        title: "St Andrews #11 • 7-Iron • 172 Yards",
+        title: "St Andrews #11 • 172 Yards",
         description: "The Old Course's famous par 3, with its hidden Strath bunker and swirling Scottish winds. The hole plays slightly uphill (~8 feet), requiring extra club in the already challenging Scottish conditions.",
-        // Calibrated to produce ~172 yard baseline carry
+        // Calibrated to produce ~172 yard baseline carry (plays ~175 with elevation)
         shot: {
             ball_speed_mph: 170,
             launch_angle_deg: 15,
@@ -140,13 +140,13 @@ const scenarios = [
             humidity_pct: 80,
             pressure_inhg: 29.8
         },
-        standardClub: "7-Iron",
+        standardClub: "6-Iron",  // 172 yards + 3 yards (8ft climb) = ~175 yards effective
         targetCarry: 172,
         elevation_change_ft: 8  // Slightly uphill
     },
     {
         id: 6,
-        title: "TPC Sawgrass #17 • 9-Iron • 137 Yards",
+        title: "TPC Sawgrass #17 • 137 Yards",
         description: "The most famous island green in golf. The hole is essentially flat (no elevation change), but wind swirls unpredictably in the amphitheater setting. There's no bailout - miss the green and you're wet.",
         // Calibrated to produce ~137 yard baseline carry
         shot: {
@@ -242,19 +242,29 @@ function updateDisplay(data, scenario) {
     const adjusted = data.adjusted;
     const impact = data.impact_breakdown;
     const conditions = scenario.conditions;
+    const elevationFt = scenario.elevation_change_ft || 0;
 
-    // Standard stats (baseline - your normal shot in calm conditions)
-    document.getElementById('std-carry').textContent = Math.round(baseline.carry_yards);
-    document.getElementById('std-total').textContent = Math.round(baseline.total_yards);
+    // Calculate effective playing distance (factoring in elevation)
+    // Downhill = plays shorter (add yards to carry for same effect)
+    // Uphill = plays longer (subtract yards from carry for same effect)
+    const elevationEffect = -elevationFt / 3;  // negative elevation = positive carry effect
+    const effectiveCarry = Math.round(baseline.carry_yards + elevationEffect);
+    const effectiveTotal = Math.round(baseline.total_yards + elevationEffect);
+
+    // Standard stats (with elevation factored in - this is the "effective" playing distance)
+    document.getElementById('std-carry').textContent = effectiveCarry;
+    document.getElementById('std-total').textContent = effectiveTotal;
     document.getElementById('std-apex').textContent = Math.round(baseline.apex_height_yards);
     document.getElementById('std-drift').textContent = Math.round(Math.abs(baseline.lateral_drift_yards));
     document.getElementById('std-flight').textContent = baseline.flight_time_seconds.toFixed(1);
     document.getElementById('std-land').textContent = Math.round(baseline.landing_angle_deg) + '°';
     document.getElementById('std-club').textContent = scenario.standardClub;
 
-    // Adjusted stats (with weather)
-    document.getElementById('adj-carry').textContent = Math.round(adjusted.carry_yards);
-    document.getElementById('adj-total').textContent = Math.round(adjusted.total_yards);
+    // Adjusted stats (with weather AND elevation)
+    const adjEffectiveCarry = Math.round(adjusted.carry_yards + elevationEffect);
+    const adjEffectiveTotal = Math.round(adjusted.total_yards + elevationEffect);
+    document.getElementById('adj-carry').textContent = adjEffectiveCarry;
+    document.getElementById('adj-total').textContent = adjEffectiveTotal;
     document.getElementById('adj-apex').textContent = Math.round(adjusted.apex_height_yards);
     document.getElementById('adj-drift').textContent = Math.round(Math.abs(adjusted.lateral_drift_yards));
     document.getElementById('adj-flight').textContent = adjusted.flight_time_seconds.toFixed(1);
@@ -450,7 +460,8 @@ function generateExplanation(scenario, impact, baseline, adjusted, recommendatio
     return explanation;
 }
 
-// Get club recommendation based on distance difference and elevation
+// Get club recommendation based on weather effect only
+// Note: standardClub is already adjusted for elevation, so we only consider weather here
 function getClubRecommendation(originalClub, carryDiff, driftYards, targetCarry, elevationFt = 0) {
     const clubOrder = ['LW', 'SW', 'GW', 'PW', '9-Iron', '8-Iron', '7-Iron', '6-Iron', '5-Iron', '4-Iron', '5-Wood', '3-Wood', 'Driver'];
     const currentIndex = clubOrder.findIndex(c => c.toLowerCase() === originalClub.toLowerCase());
@@ -459,57 +470,46 @@ function getClubRecommendation(originalClub, carryDiff, driftYards, targetCarry,
     let advice = '';
     let clubsChange = 0;
 
-    // Calculate elevation effect on "playing distance"
-    // Downhill (negative elevation) = hole plays shorter = need LESS club
-    // Uphill (positive elevation) = hole plays longer = need MORE club
-    // ~1 yard per 3 feet of elevation change
-    const elevationEffect = -elevationFt / 3;  // negative elevation = negative effect (less club needed)
-
-    // Total adjustment = weather effect + elevation effect
+    // Only consider weather effect for club recommendation
+    // (standardClub is already adjusted for elevation)
     // carryDiff is how much weather changes your carry (negative = ball flies shorter)
-    // elevationEffect is how the hole plays (negative = plays shorter = need less club)
     //
     // Example: Pebble Beach #7
+    // - standardClub = GW (already accounts for 50ft drop)
     // - carryDiff = -7 (wind makes ball fly 7 yards shorter)
-    // - elevationEffect = -(-50)/3 = +17 (but wait, downhill means we need LESS club)
-    //
-    // Let's think about it differently:
-    // - Weather makes ball fly shorter by 7 yards -> need more club
-    // - But elevation drop means hole plays 17 yards shorter -> need less club
-    // - Net: need less club by about 10 yards worth
-    const totalAdjustment = carryDiff + elevationEffect;
+    // - Since -7 is within threshold, stick with GW
 
     // Calculate clubs needed based on ~10 yards per club
-    if (totalAdjustment < -15) {
+    if (carryDiff < -15) {
         clubsChange = 2;
-    } else if (totalAdjustment < -7) {
+    } else if (carryDiff < -7) {
         clubsChange = 1;
-    } else if (totalAdjustment > 15) {
+    } else if (carryDiff > 15) {
         clubsChange = -2;
-    } else if (totalAdjustment > 7) {
+    } else if (carryDiff > 7) {
         clubsChange = -1;
     }
 
-    // Build advice string with context
+    // Build advice string with context about elevation
     const elevationContext = elevationFt !== 0
         ? (elevationFt < 0
-            ? ` (the ${Math.abs(elevationFt)} ft drop makes it play ${Math.abs(elevationFt / 3).toFixed(0)} yards shorter)`
-            : ` (the ${elevationFt} ft climb makes it play ${(elevationFt / 3).toFixed(0)} yards longer)`)
+            ? ` The ${Math.abs(elevationFt)} ft drop is already factored into your club selection.`
+            : ` The ${elevationFt} ft climb is already factored into your club selection.`)
         : '';
 
     if (clubsChange > 0) {
         const newIndex = Math.min(currentIndex + clubsChange, clubOrder.length - 1);
         const newClub = clubOrder[newIndex];
         text = `${newClub} (+${clubsChange} club${clubsChange > 1 ? 's' : ''})`;
-        advice = `Club up to a ${newClub} to reach your ${targetCarry}-yard target${elevationContext}.`;
+        advice = `Club up to a ${newClub} to compensate for the wind.${elevationContext}`;
     } else if (clubsChange < 0) {
         const newIndex = Math.max(currentIndex + clubsChange, 0);
         const newClub = clubOrder[newIndex];
         text = `${newClub} (${clubsChange} club${clubsChange < -1 ? 's' : ''})`;
-        advice = `Club down to a ${newClub}${elevationContext}.`;
+        advice = `Club down to a ${newClub} - the conditions help your ball fly further.${elevationContext}`;
     } else {
         text = `${originalClub} (same club)`;
-        advice = `Stick with your ${originalClub}${elevationContext}.`;
+        advice = `Stick with your ${originalClub}.${elevationContext}`;
     }
 
     // Add drift advice
