@@ -263,9 +263,13 @@ function updateDisplay(data, scenario) {
     const recommendation = getClubRecommendation(scenario.standardClub, carryDiff, driftYards, scenario.targetCarry);
     document.getElementById('adj-club').textContent = recommendation.text;
 
-    // Generate dynamic explanation
+    // Generate dynamic explanations
     const explanation = generateExplanation(scenario, impact, baseline, adjusted, recommendation);
     document.getElementById('explanation-text').innerHTML = explanation;
+
+    // Generate physics explanation
+    const physicsExplanation = generatePhysicsExplanation(scenario, impact);
+    document.getElementById('physics-text').innerHTML = physicsExplanation;
 
     // Deltas
     updateDelta('delta-carry', carryDiff);
@@ -286,6 +290,63 @@ function updateDisplay(data, scenario) {
     updateImpactBar('temp', impact.temperature_effect_yards);
     updateImpactBar('altitude', impact.altitude_effect_yards);
     updateImpactBar('humidity', impact.humidity_effect_yards);
+}
+
+// Generate physics explanation based on conditions
+function generatePhysicsExplanation(scenario, impact) {
+    const cond = scenario.conditions;
+
+    // Determine the dominant factor
+    const effects = [
+        { name: 'wind', value: Math.abs(impact.wind_effect_yards), raw: impact.wind_effect_yards },
+        { name: 'temp', value: Math.abs(impact.temperature_effect_yards), raw: impact.temperature_effect_yards },
+        { name: 'altitude', value: Math.abs(impact.altitude_effect_yards), raw: impact.altitude_effect_yards },
+        { name: 'humidity', value: Math.abs(impact.humidity_effect_yards), raw: impact.humidity_effect_yards }
+    ];
+    effects.sort((a, b) => b.value - a.value);
+    const dominant = effects[0];
+
+    let explanation = '';
+
+    // Wind physics
+    if (dominant.name === 'wind' || cond.wind_speed_mph >= 10) {
+        const windDir = cond.wind_direction_deg;
+        if (windDir < 45 || windDir > 315) {
+            // Headwind
+            explanation = `<strong>Headwind & Drag:</strong> When the ball flies into a ${cond.wind_speed_mph} mph headwind, its speed <em>relative to the air</em> increases dramatically. Drag force is proportional to velocity squared (F = ½ρv²CdA), so even modest headwinds create significant resistance. <strong>The ball loses energy faster</strong> and drops earlier.`;
+        } else if (windDir > 135 && windDir < 225) {
+            // Tailwind
+            explanation = `<strong>Tailwind & Reduced Drag:</strong> A ${cond.wind_speed_mph} mph tailwind reduces the ball's speed relative to the air. Since drag scales with the square of relative velocity, this significantly decreases air resistance. The ball maintains speed longer and <strong>carries further</strong>, though with a flatter trajectory and more roll.`;
+        } else {
+            // Crosswind
+            const direction = (windDir >= 45 && windDir <= 135) ? 'left-to-right' : 'right-to-left';
+            explanation = `<strong>Crosswind & Lateral Force:</strong> The ${cond.wind_speed_mph} mph ${direction} wind exerts a constant sideways force on the ball throughout its flight. This force accumulates over the 5+ seconds of flight time, causing the ball to drift. The effect is <strong>more pronounced for higher shots</strong> that spend more time in the air.`;
+        }
+    }
+    // Altitude physics
+    else if (dominant.name === 'altitude' && cond.altitude_ft > 2000) {
+        explanation = `<strong>Air Density & Altitude:</strong> At ${cond.altitude_ft.toLocaleString()} feet, air pressure drops significantly (roughly 3% per 1,000 ft). Lower air density means <strong>less drag resistance</strong> on the ball. The same swing produces longer carry because there are fewer air molecules to slow the ball down. Expect 2-3% more distance per 1,000 feet of elevation.`;
+    }
+    // Temperature physics
+    else if (dominant.name === 'temp' || Math.abs(cond.temperature_f - 70) > 15) {
+        if (cond.temperature_f < 55) {
+            explanation = `<strong>Cold Air Density:</strong> At ${cond.temperature_f}°F, air is denser than at standard temperature (molecules pack closer together). Denser air creates <strong>more drag</strong> on the ball, reducing carry distance. Additionally, cold golf balls compress less at impact, reducing energy transfer. Both effects combine to <strong>shorten your shots</strong>.`;
+        } else if (cond.temperature_f > 85) {
+            explanation = `<strong>Warm Air Density:</strong> At ${cond.temperature_f}°F, air molecules spread apart, reducing density. Less dense air means <strong>less drag resistance</strong>, so the ball maintains speed longer and carries further. This is why summer rounds often play shorter than the yardage suggests - your ball is genuinely flying further.`;
+        } else {
+            explanation = `<strong>Standard Conditions:</strong> At ${cond.temperature_f}°F near sea level, air density is close to standard. The primary factor affecting your shot is wind. Air density affects drag force (F = ½ρv²CdA), and at standard conditions, <strong>drag removes about 50% of initial ball energy</strong> by landing.`;
+        }
+    }
+    // Humidity physics (smallest effect)
+    else if (dominant.name === 'humidity') {
+        explanation = `<strong>Humidity & Air Composition:</strong> Contrary to intuition, humid air is actually <strong>less dense</strong> than dry air. Water molecules (H₂O, mass 18) replace heavier nitrogen (N₂, mass 28) and oxygen (O₂, mass 32) molecules. At ${cond.humidity_pct}% humidity, this slightly reduces air resistance - though the effect is small (typically 1-2 yards).`;
+    }
+    // Default explanation
+    else {
+        explanation = `<strong>Combined Effects:</strong> Multiple weather factors are influencing your shot. Air density (affected by temperature, altitude, and humidity) determines drag force. The drag equation F = ½ρv²CdA shows that <strong>density (ρ) directly scales the resistance</strong> your ball experiences throughout flight.`;
+    }
+
+    return explanation;
 }
 
 // Generate plain English explanation based on the data

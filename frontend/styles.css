@@ -370,8 +370,8 @@ body {
     color: var(--primary);
 }
 
-/* Details Grid - Two column layout for conditions + impact */
-.details-grid {
+/* Explanation Grid - Two column layout for explanations */
+.explanation-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
@@ -384,7 +384,7 @@ body {
     border-radius: 0.75rem;
     padding: 1rem 1.5rem;
     border: 1px solid var(--border);
-    height: fit-content;
+    margin-bottom: 1.5rem;
 }
 
 .conditions-bar h3 {
@@ -411,12 +411,13 @@ body {
     border: 1px solid var(--border);
 }
 
-/* Impact Breakdown */
+/* Impact Breakdown - Full width */
 .impact-breakdown {
     background: var(--bg-card);
     border-radius: 0.75rem;
     padding: 1.5rem;
     border: 1px solid var(--border);
+    margin-bottom: 1.5rem;
 }
 
 .impact-breakdown h3 {
@@ -477,7 +478,6 @@ body {
     border: 1px solid var(--secondary);
     border-radius: 0.75rem;
     padding: 1.5rem;
-    margin-bottom: 1.5rem;
 }
 
 .explanation-box h3 {
@@ -488,12 +488,38 @@ body {
 }
 
 .explanation-box p {
-    font-size: 0.95rem;
-    line-height: 1.7;
+    font-size: 0.9rem;
+    line-height: 1.6;
     color: var(--text-secondary);
 }
 
 .explanation-box strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* Physics Box */
+.physics-box {
+    background: linear-gradient(135deg, var(--bg-card) 0%, rgba(168, 85, 247, 0.1) 100%);
+    border: 1px solid #a855f7;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+}
+
+.physics-box h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: #a855f7;
+}
+
+.physics-box p {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+
+.physics-box strong {
     color: var(--text-primary);
     font-weight: 600;
 }
@@ -722,7 +748,7 @@ body {
         grid-template-columns: 1fr;
     }
 
-    .details-grid {
+    .explanation-grid {
         grid-template-columns: 1fr;
     }
 }
