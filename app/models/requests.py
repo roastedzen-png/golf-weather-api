@@ -47,7 +47,7 @@ class WeatherConditions(BaseModel):
     )
     pressure_inhg: float = Field(
         default=29.92,
-        ge=27,
+        ge=18,  # Allow low pressure for high altitudes (e.g., ~19 inHg at 12,000 ft)
         le=32,
         description="Barometric pressure in inches of mercury",
     )
