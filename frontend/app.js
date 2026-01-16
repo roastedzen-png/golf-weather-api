@@ -1,32 +1,21 @@
 // API Configuration
 const API_BASE = 'https://golf-weather-api.vercel.app';
 
-// Club data with realistic ball speeds, launch angles, and spin rates
-// Based on average amateur golfer data
-const CLUB_DATA = {
-    'driver':   { ballSpeed: 143, launchAngle: 11.0, spinRate: 2700, carry: 230, name: 'Driver' },
-    '3-wood':   { ballSpeed: 132, launchAngle: 11.5, spinRate: 3500, carry: 215, name: '3-Wood' },
-    '5-wood':   { ballSpeed: 125, launchAngle: 13.0, spinRate: 4000, carry: 200, name: '5-Wood' },
-    '4-iron':   { ballSpeed: 118, launchAngle: 14.0, spinRate: 4500, carry: 185, name: '4-Iron' },
-    '5-iron':   { ballSpeed: 113, launchAngle: 15.0, spinRate: 5000, carry: 175, name: '5-Iron' },
-    '6-iron':   { ballSpeed: 107, launchAngle: 17.0, spinRate: 5500, carry: 165, name: '6-Iron' },
-    '7-iron':   { ballSpeed: 101, launchAngle: 19.0, spinRate: 6500, carry: 155, name: '7-Iron' },
-    '8-iron':   { ballSpeed: 95,  launchAngle: 21.0, spinRate: 7500, carry: 145, name: '8-Iron' },
-    '9-iron':   { ballSpeed: 89,  launchAngle: 24.0, spinRate: 8500, carry: 135, name: '9-Iron' },
-    'pw':       { ballSpeed: 83,  launchAngle: 27.0, spinRate: 9000, carry: 125, name: 'PW' },
-    'gw':       { ballSpeed: 76,  launchAngle: 30.0, spinRate: 9500, carry: 110, name: 'GW' },
-    'sw':       { ballSpeed: 68,  launchAngle: 33.0, spinRate: 10000, carry: 95, name: 'SW' },
-    'lw':       { ballSpeed: 60,  launchAngle: 36.0, spinRate: 10500, carry: 80, name: 'LW' }
-};
-
-// Scenario data - club-first approach with realistic physics
+// Calibrated shot parameters that produce accurate carry distances from the physics API
+// Each scenario specifies exact ball_speed, launch_angle, spin_rate tuned to produce the target carry
 const scenarios = [
     {
         id: 0,
         title: "7-Iron • 165 Yards • Strong Headwind",
         description: "Your standard 7-iron flies 165 yards in calm conditions. But what happens when you're facing a 20 mph headwind at sea level? The ball fights through dense air and loses significant distance.",
-        club: '7-iron',
-        targetCarry: 165,
+        // Calibrated to produce ~165 yard baseline carry
+        shot: {
+            ball_speed_mph: 160,
+            launch_angle_deg: 16,
+            spin_rate_rpm: 5500,
+            spin_axis_deg: 0,
+            direction_deg: 0
+        },
         conditions: {
             wind_speed_mph: 20,
             wind_direction_deg: 0,  // Pure headwind
@@ -36,14 +25,20 @@ const scenarios = [
             pressure_inhg: 29.92
         },
         standardClub: "7-Iron",
-        explanation: "The 20 mph headwind is costing you <strong>significant carry distance</strong>. Your 7-iron that normally flies 165 yards will come up well short. <strong>Club up two clubs</strong> to reach your target. The ball will land steeper which means <strong>less roll</strong> - that's helpful for holding the green."
+        targetCarry: 165
     },
     {
         id: 1,
         title: "6-Iron • 175 Yards • Denver Summer",
         description: "Playing at 5,280 feet in the Colorado summer. The thin, warm air means your ball will fly much further than the yardage suggests - but how much further?",
-        club: '6-iron',
-        targetCarry: 175,
+        // Calibrated to produce ~175 yard baseline carry
+        shot: {
+            ball_speed_mph: 168,
+            launch_angle_deg: 15,
+            spin_rate_rpm: 5000,
+            spin_axis_deg: 0,
+            direction_deg: 0
+        },
         conditions: {
             wind_speed_mph: 5,
             wind_direction_deg: 180,  // Slight tailwind
@@ -53,14 +48,20 @@ const scenarios = [
             pressure_inhg: 29.5
         },
         standardClub: "6-Iron",
-        explanation: "At 5,280 feet (one mile high), the air is <strong>15-17% thinner</strong> than at sea level. Combined with the warm 85°F temperature and slight tailwind, your ball will fly significantly further. <strong>Club down</strong> - your 6-iron will play like a 5-iron here."
+        targetCarry: 175
     },
     {
         id: 2,
         title: "8-Iron • 150 Yards • Cold Morning",
         description: "An early morning tee time in 45°F weather. Cold air is dense air, and your ball won't fly as far. Plus the ball itself is colder and less responsive.",
-        club: '8-iron',
-        targetCarry: 150,
+        // Calibrated to produce ~150 yard baseline carry
+        shot: {
+            ball_speed_mph: 148,
+            launch_angle_deg: 17,
+            spin_rate_rpm: 6000,
+            spin_axis_deg: 0,
+            direction_deg: 0
+        },
         conditions: {
             wind_speed_mph: 5,
             wind_direction_deg: 0,  // Light headwind
@@ -70,14 +71,20 @@ const scenarios = [
             pressure_inhg: 30.1
         },
         standardClub: "8-Iron",
-        explanation: "Cold 45°F air is <strong>significantly denser</strong> than warm air, creating more drag on your ball. Combined with the light headwind, expect to lose distance. <strong>Take one more club</strong> than normal. Pro tip: keep your balls warm in your pocket between shots."
+        targetCarry: 150
     },
     {
         id: 3,
         title: "9-Iron • 140 Yards • Crosswind",
         description: "A 15 mph left-to-right crosswind. The ball will drift sideways during flight. How much should you aim left to compensate?",
-        club: '9-iron',
-        targetCarry: 140,
+        // Calibrated to produce ~140 yard baseline carry
+        shot: {
+            ball_speed_mph: 140,
+            launch_angle_deg: 18,
+            spin_rate_rpm: 6500,
+            spin_axis_deg: 0,
+            direction_deg: 0
+        },
         conditions: {
             wind_speed_mph: 15,
             wind_direction_deg: 90,  // Left-to-right
@@ -87,14 +94,20 @@ const scenarios = [
             pressure_inhg: 29.92
         },
         standardClub: "9-Iron",
-        explanation: "The 15 mph crosswind will push your ball <strong>significantly right</strong> during its 4+ seconds of flight. Aim left of your target to allow for the drift. Distance won't change much, but <strong>accuracy is the challenge</strong> here."
+        targetCarry: 140
     },
     {
         id: 4,
         title: "Pebble Beach #7 • PW • 107 Yards",
         description: "The famous downhill par 3 overlooking the Pacific Ocean. Coastal winds swirl around this exposed green, making club selection tricky even for the pros.",
-        club: 'pw',
-        targetCarry: 107,
+        // Calibrated to produce ~107 yard baseline carry
+        shot: {
+            ball_speed_mph: 112,
+            launch_angle_deg: 22,
+            spin_rate_rpm: 8000,
+            spin_axis_deg: 0,
+            direction_deg: 0
+        },
         conditions: {
             wind_speed_mph: 15,
             wind_direction_deg: 45,  // Quartering headwind from left
@@ -104,14 +117,20 @@ const scenarios = [
             pressure_inhg: 30.0
         },
         standardClub: "PW",
-        explanation: "The quartering wind off the Pacific costs you distance AND pushes the ball right. The cool, humid coastal air is dense. <strong>Club up to a 9-iron</strong> and aim at the left edge - let the wind bring it back. The tiny green demands precision."
+        targetCarry: 107
     },
     {
         id: 5,
         title: "St Andrews #11 • 7-Iron • 172 Yards",
         description: "The Old Course's famous par 3, with its hidden Strath bunker and swirling Scottish winds. Links golf at its finest - and most unpredictable.",
-        club: '7-iron',
-        targetCarry: 172,
+        // Calibrated to produce ~172 yard baseline carry
+        shot: {
+            ball_speed_mph: 166,
+            launch_angle_deg: 15,
+            spin_rate_rpm: 5200,
+            spin_axis_deg: 0,
+            direction_deg: 0
+        },
         conditions: {
             wind_speed_mph: 22,
             wind_direction_deg: 315,  // Quartering headwind from right
@@ -121,14 +140,20 @@ const scenarios = [
             pressure_inhg: 29.8
         },
         standardClub: "7-Iron",
-        explanation: "Scottish links wind is relentless. The 22 mph quartering wind costs distance AND pushes left. Cold, damp air adds drag. <strong>Take two extra clubs</strong> and hit a lower, punchy shot to reduce wind effect. Aim right and let the wind work the ball back."
+        targetCarry: 172
     },
     {
         id: 6,
         title: "TPC Sawgrass #17 • 9-Iron • 137 Yards",
         description: "The most famous island green in golf. Wind swirls in the amphitheater setting, and there's no bailout. Miss the green and you're wet.",
-        club: '9-iron',
-        targetCarry: 137,
+        // Calibrated to produce ~137 yard baseline carry
+        shot: {
+            ball_speed_mph: 137,
+            launch_angle_deg: 19,
+            spin_rate_rpm: 6800,
+            spin_axis_deg: 0,
+            direction_deg: 0
+        },
         conditions: {
             wind_speed_mph: 12,
             wind_direction_deg: 225,  // Back-right quartering (helping, pushing left)
@@ -138,9 +163,26 @@ const scenarios = [
             pressure_inhg: 29.95
         },
         standardClub: "9-Iron",
-        explanation: "The helping wind will add distance - <strong>don't fly it over the green into the water</strong>. The wind also pushes left, so favor the right side. Humid Florida air helps slightly. <strong>Take less club</strong> and aim right-center. The Sunday pin is always back-left for drama."
+        targetCarry: 137
     }
 ];
+
+// Club data for custom scenario builder
+const CLUB_DATA = {
+    'driver':   { ballSpeed: 180, launchAngle: 12, spinRate: 2800, carry: 190, name: 'Driver' },
+    '3-wood':   { ballSpeed: 172, launchAngle: 13, spinRate: 3500, carry: 180, name: '3-Wood' },
+    '5-wood':   { ballSpeed: 165, launchAngle: 14, spinRate: 4000, carry: 170, name: '5-Wood' },
+    '4-iron':   { ballSpeed: 160, launchAngle: 15, spinRate: 4500, carry: 165, name: '4-Iron' },
+    '5-iron':   { ballSpeed: 155, launchAngle: 15, spinRate: 5000, carry: 160, name: '5-Iron' },
+    '6-iron':   { ballSpeed: 150, launchAngle: 16, spinRate: 5500, carry: 150, name: '6-Iron' },
+    '7-iron':   { ballSpeed: 145, launchAngle: 17, spinRate: 6000, carry: 145, name: '7-Iron' },
+    '8-iron':   { ballSpeed: 138, launchAngle: 18, spinRate: 6500, carry: 135, name: '8-Iron' },
+    '9-iron':   { ballSpeed: 130, launchAngle: 19, spinRate: 7000, carry: 125, name: '9-Iron' },
+    'pw':       { ballSpeed: 120, launchAngle: 21, spinRate: 8000, carry: 115, name: 'PW' },
+    'gw':       { ballSpeed: 110, launchAngle: 24, spinRate: 9000, carry: 100, name: 'GW' },
+    'sw':       { ballSpeed: 100, launchAngle: 28, spinRate: 9500, carry: 90, name: 'SW' },
+    'lw':       { ballSpeed: 90,  launchAngle: 32, spinRate: 10000, carry: 75, name: 'LW' }
+};
 
 // Current state
 let currentScenario = 0;
@@ -150,20 +192,6 @@ document.addEventListener('DOMContentLoaded', () => {
     loadScenario(0);
     setupSliderListeners();
 });
-
-// Get shot parameters from club and target carry
-function getShotParams(clubKey, targetCarry) {
-    const club = CLUB_DATA[clubKey];
-    // Scale ball speed based on target carry vs standard carry
-    const carryRatio = targetCarry / club.carry;
-    return {
-        ball_speed_mph: Math.round(club.ballSpeed * Math.sqrt(carryRatio)),
-        launch_angle_deg: club.launchAngle,
-        spin_rate_rpm: club.spinRate,
-        spin_axis_deg: 0,
-        direction_deg: 0
-    };
-}
 
 // Load a preset scenario
 async function loadScenario(index) {
@@ -179,19 +207,16 @@ async function loadScenario(index) {
     document.getElementById('scenario-title').textContent = scenario.title;
     document.getElementById('scenario-description').textContent = scenario.description;
 
-    // Get shot parameters based on club and target carry
-    const shot = getShotParams(scenario.club, scenario.targetCarry);
-
     // Show loading
     showLoading();
 
     try {
-        // Call API
+        // Call API with pre-calibrated shot parameters
         const response = await fetch(`${API_BASE}/v1/trajectory`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                shot: shot,
+                shot: scenario.shot,
                 conditions: scenario.conditions
             })
         });
@@ -215,7 +240,7 @@ function updateDisplay(data, scenario) {
     const impact = data.impact_breakdown;
     const conditions = scenario.conditions;
 
-    // Standard stats (baseline)
+    // Standard stats (baseline - your normal shot in calm conditions)
     document.getElementById('std-carry').textContent = Math.round(baseline.carry_yards);
     document.getElementById('std-total').textContent = Math.round(baseline.total_yards);
     document.getElementById('std-apex').textContent = Math.round(baseline.apex_height_yards);
@@ -224,7 +249,7 @@ function updateDisplay(data, scenario) {
     document.getElementById('std-land').textContent = Math.round(baseline.landing_angle_deg) + '°';
     document.getElementById('std-club').textContent = scenario.standardClub;
 
-    // Adjusted stats
+    // Adjusted stats (with weather)
     document.getElementById('adj-carry').textContent = Math.round(adjusted.carry_yards);
     document.getElementById('adj-total').textContent = Math.round(adjusted.total_yards);
     document.getElementById('adj-apex').textContent = Math.round(adjusted.apex_height_yards);
@@ -232,16 +257,21 @@ function updateDisplay(data, scenario) {
     document.getElementById('adj-flight').textContent = adjusted.flight_time_seconds.toFixed(1);
     document.getElementById('adj-land').textContent = Math.round(adjusted.landing_angle_deg) + '°';
 
-    // Calculate recommended club
+    // Calculate recommended club and generate explanation
     const carryDiff = adjusted.carry_yards - baseline.carry_yards;
-    const driftYards = Math.abs(adjusted.lateral_drift_yards);
-    document.getElementById('adj-club').textContent = getClubRecommendation(scenario.standardClub, carryDiff, driftYards);
+    const driftYards = adjusted.lateral_drift_yards;
+    const recommendation = getClubRecommendation(scenario.standardClub, carryDiff, driftYards, scenario.targetCarry);
+    document.getElementById('adj-club').textContent = recommendation.text;
+
+    // Generate dynamic explanation
+    const explanation = generateExplanation(scenario, impact, baseline, adjusted, recommendation);
+    document.getElementById('explanation-text').innerHTML = explanation;
 
     // Deltas
-    updateDelta('delta-carry', adjusted.carry_yards - baseline.carry_yards);
+    updateDelta('delta-carry', carryDiff);
     updateDelta('delta-total', adjusted.total_yards - baseline.total_yards);
     updateDelta('delta-apex', adjusted.apex_height_yards - baseline.apex_height_yards);
-    updateDelta('delta-drift', adjusted.lateral_drift_yards, true);
+    updateDelta('delta-drift', driftYards, true);
     updateDelta('delta-flight', adjusted.flight_time_seconds - baseline.flight_time_seconds);
     updateDelta('delta-land', adjusted.landing_angle_deg - baseline.landing_angle_deg, false, '°');
 
@@ -256,43 +286,108 @@ function updateDisplay(data, scenario) {
     updateImpactBar('temp', impact.temperature_effect_yards);
     updateImpactBar('altitude', impact.altitude_effect_yards);
     updateImpactBar('humidity', impact.humidity_effect_yards);
+}
 
-    // Explanation
-    document.getElementById('explanation-text').innerHTML = scenario.explanation;
+// Generate plain English explanation based on the data
+function generateExplanation(scenario, impact, baseline, adjusted, recommendation) {
+    const parts = [];
+    const carryDiff = adjusted.carry_yards - baseline.carry_yards;
+    const driftYards = adjusted.lateral_drift_yards;
+
+    // Wind effect
+    if (Math.abs(impact.wind_effect_yards) > 2) {
+        if (impact.wind_effect_yards < 0) {
+            parts.push(`The wind is costing you <strong>${Math.abs(impact.wind_effect_yards).toFixed(0)} yards</strong> of carry`);
+        } else {
+            parts.push(`The wind is adding <strong>${impact.wind_effect_yards.toFixed(0)} yards</strong> to your carry`);
+        }
+    }
+
+    // Temperature effect
+    if (Math.abs(impact.temperature_effect_yards) > 1) {
+        if (impact.temperature_effect_yards < 0) {
+            parts.push(`the cold ${scenario.conditions.temperature_f}°F air adds drag, costing another <strong>${Math.abs(impact.temperature_effect_yards).toFixed(0)} yards</strong>`);
+        } else {
+            parts.push(`the warm ${scenario.conditions.temperature_f}°F air is thinner, adding <strong>${impact.temperature_effect_yards.toFixed(0)} yards</strong>`);
+        }
+    }
+
+    // Altitude effect
+    if (Math.abs(impact.altitude_effect_yards) > 2) {
+        parts.push(`the ${scenario.conditions.altitude_ft.toLocaleString()} ft altitude adds <strong>${impact.altitude_effect_yards.toFixed(0)} yards</strong> due to thinner air`);
+    }
+
+    // Combine effects into sentence
+    let explanation = '';
+    if (parts.length > 0) {
+        explanation = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+        if (parts.length > 1) {
+            explanation += ', and ' + parts.slice(1).join(', and ');
+        }
+        explanation += '. ';
+    }
+
+    // Net distance change
+    if (Math.abs(carryDiff) > 3) {
+        const direction = carryDiff > 0 ? 'further' : 'shorter';
+        explanation += `Your ${scenario.standardClub} will fly <strong>${Math.abs(carryDiff).toFixed(0)} yards ${direction}</strong> than normal. `;
+    }
+
+    // Drift advice
+    if (Math.abs(driftYards) > 3) {
+        const driftDirection = driftYards > 0 ? 'right' : 'left';
+        explanation += `The ball will drift <strong>${Math.abs(driftYards).toFixed(0)} yards ${driftDirection}</strong> during flight. `;
+    }
+
+    // Club recommendation
+    explanation += `<strong>${recommendation.advice}</strong>`;
+
+    return explanation;
 }
 
 // Get club recommendation based on distance difference
-function getClubRecommendation(originalClub, carryDiff, driftYards) {
+function getClubRecommendation(originalClub, carryDiff, driftYards, targetCarry) {
     const clubOrder = ['LW', 'SW', 'GW', 'PW', '9-Iron', '8-Iron', '7-Iron', '6-Iron', '5-Iron', '4-Iron', '5-Wood', '3-Wood', 'Driver'];
     const currentIndex = clubOrder.findIndex(c => c.toLowerCase() === originalClub.toLowerCase());
 
-    let recommendation = '';
+    let text = '';
+    let advice = '';
+    let clubsChange = 0;
 
-    if (Math.abs(carryDiff) < 5) {
-        recommendation = `${originalClub} (same club)`;
-    } else if (carryDiff < -15) {
-        const newIndex = Math.min(currentIndex + 2, clubOrder.length - 1);
-        recommendation = `${clubOrder[newIndex]} (+2 clubs)`;
-    } else if (carryDiff < -8) {
-        const newIndex = Math.min(currentIndex + 1, clubOrder.length - 1);
-        recommendation = `${clubOrder[newIndex]} (+1 club)`;
+    // Calculate clubs needed based on ~10 yards per club
+    if (carryDiff < -15) {
+        clubsChange = 2;
+    } else if (carryDiff < -7) {
+        clubsChange = 1;
     } else if (carryDiff > 15) {
-        const newIndex = Math.max(currentIndex - 2, 0);
-        recommendation = `${clubOrder[newIndex]} (-2 clubs)`;
-    } else if (carryDiff > 8) {
-        const newIndex = Math.max(currentIndex - 1, 0);
-        recommendation = `${clubOrder[newIndex]} (-1 club)`;
+        clubsChange = -2;
+    } else if (carryDiff > 7) {
+        clubsChange = -1;
+    }
+
+    if (clubsChange > 0) {
+        const newIndex = Math.min(currentIndex + clubsChange, clubOrder.length - 1);
+        const newClub = clubOrder[newIndex];
+        text = `${newClub} (+${clubsChange} club${clubsChange > 1 ? 's' : ''})`;
+        advice = `Club up to a ${newClub} to reach your ${targetCarry}-yard target.`;
+    } else if (clubsChange < 0) {
+        const newIndex = Math.max(currentIndex + clubsChange, 0);
+        const newClub = clubOrder[newIndex];
+        text = `${newClub} (${clubsChange} club${clubsChange < -1 ? 's' : ''})`;
+        advice = `Club down to a ${newClub} - the ball will fly further than normal.`;
     } else {
-        recommendation = originalClub;
+        text = `${originalClub} (same club)`;
+        advice = `Stick with your ${originalClub}.`;
     }
 
-    // Add drift advice if significant
-    if (driftYards > 5) {
-        const direction = driftYards > 0 ? 'left' : 'right';
-        recommendation += `, aim ${Math.round(driftYards)}yds ${direction}`;
+    // Add drift advice
+    if (Math.abs(driftYards) > 5) {
+        const aimDirection = driftYards > 0 ? 'left' : 'right';
+        text += `, aim ${Math.abs(Math.round(driftYards))}yds ${aimDirection}`;
+        advice += ` Aim ${Math.abs(Math.round(driftYards))} yards ${aimDirection} to compensate for wind drift.`;
     }
 
-    return recommendation;
+    return { text, advice };
 }
 
 // Helper: Update delta display
@@ -309,7 +404,7 @@ function updateImpactBar(type, value) {
     const bar = document.getElementById(`bar-${type}`);
     const valueEl = document.getElementById(`impact-${type}`);
 
-    const maxEffect = 20; // Max yards for full bar
+    const maxEffect = 20;
     const width = Math.min(Math.abs(value) / maxEffect * 100, 100);
 
     bar.style.width = `${width}%`;
@@ -356,42 +451,58 @@ function updateClubDistance() {
 
 // Setup slider listeners
 function setupSliderListeners() {
-    // Temperature
     const tempSlider = document.getElementById('temperature');
     const tempVal = document.getElementById('temperature-val');
-    tempSlider.addEventListener('input', () => {
-        tempVal.textContent = `${tempSlider.value}°F`;
-    });
+    if (tempSlider) {
+        tempSlider.addEventListener('input', () => {
+            tempVal.textContent = `${tempSlider.value}°F`;
+        });
+    }
 
-    // Wind speed
     const windSlider = document.getElementById('wind-speed');
     const windVal = document.getElementById('wind-speed-val');
-    windSlider.addEventListener('input', () => {
-        windVal.textContent = `${windSlider.value} mph`;
-    });
+    if (windSlider) {
+        windSlider.addEventListener('input', () => {
+            windVal.textContent = `${windSlider.value} mph`;
+        });
+    }
 
-    // Altitude
     const altSlider = document.getElementById('altitude');
     const altVal = document.getElementById('altitude-val');
-    altSlider.addEventListener('input', () => {
-        const alt = parseInt(altSlider.value);
-        altVal.textContent = alt === 0 ? 'Sea level' : `${alt.toLocaleString()} ft`;
-    });
+    if (altSlider) {
+        altSlider.addEventListener('input', () => {
+            const alt = parseInt(altSlider.value);
+            altVal.textContent = alt === 0 ? 'Sea level' : `${alt.toLocaleString()} ft`;
+        });
+    }
 
-    // Humidity
     const humSlider = document.getElementById('humidity');
     const humVal = document.getElementById('humidity-val');
-    humSlider.addEventListener('input', () => {
-        humVal.textContent = `${humSlider.value}%`;
-    });
+    if (humSlider) {
+        humSlider.addEventListener('input', () => {
+            humVal.textContent = `${humSlider.value}%`;
+        });
+    }
 }
 
 // Simulate custom scenario
 async function simulateCustom() {
     const clubSelect = document.getElementById('club-select');
     const clubKey = clubSelect.value;
-    const clubName = CLUB_DATA[clubKey].name;
+    const club = CLUB_DATA[clubKey];
     const targetCarry = parseInt(document.getElementById('carry-distance').value);
+
+    // Scale ball speed to achieve desired carry
+    const carryRatio = targetCarry / club.carry;
+    const scaledBallSpeed = Math.round(club.ballSpeed * Math.sqrt(carryRatio));
+
+    const shot = {
+        ball_speed_mph: scaledBallSpeed,
+        launch_angle_deg: club.launchAngle,
+        spin_rate_rpm: club.spinRate,
+        spin_axis_deg: 0,
+        direction_deg: 0
+    };
 
     const conditions = {
         wind_speed_mph: parseFloat(document.getElementById('wind-speed').value),
@@ -402,12 +513,10 @@ async function simulateCustom() {
         pressure_inhg: 29.92
     };
 
-    const shot = getShotParams(clubKey, targetCarry);
-
     // Update header
-    document.getElementById('scenario-title').textContent = `${clubName} • ${targetCarry} Yards • Custom Conditions`;
+    document.getElementById('scenario-title').textContent = `${club.name} • ${targetCarry} Yards • Custom`;
     document.getElementById('scenario-description').textContent =
-        `Testing your ${clubName} that carries ${targetCarry} yards in calm conditions. See how your custom weather conditions affect the shot.`;
+        `Your ${club.name} that normally carries ${targetCarry} yards. See how your custom weather conditions affect the shot.`;
 
     showLoading();
     hideCustomPanel();
@@ -426,8 +535,9 @@ async function simulateCustom() {
         // Create custom scenario for display
         const customScenario = {
             conditions,
-            standardClub: clubName,
-            explanation: generateCustomExplanation(data, conditions)
+            standardClub: club.name,
+            targetCarry: targetCarry,
+            shot: shot
         };
 
         updateDisplay(data, customScenario);
@@ -437,50 +547,6 @@ async function simulateCustom() {
     } finally {
         hideLoading();
     }
-}
-
-// Generate explanation for custom scenario
-function generateCustomExplanation(data, conditions) {
-    const impact = data.impact_breakdown;
-    const parts = [];
-
-    // Wind effect
-    if (Math.abs(impact.wind_effect_yards) > 3) {
-        const effect = impact.wind_effect_yards < 0 ? 'costing' : 'adding';
-        parts.push(`The wind is ${effect} you <strong>${Math.abs(impact.wind_effect_yards).toFixed(0)} yards</strong>`);
-    }
-
-    // Temperature effect
-    if (Math.abs(impact.temperature_effect_yards) > 2) {
-        if (conditions.temperature_f < 60) {
-            parts.push(`Cold ${conditions.temperature_f}°F air is dense, reducing distance by <strong>${Math.abs(impact.temperature_effect_yards).toFixed(0)} yards</strong>`);
-        } else if (conditions.temperature_f > 85) {
-            parts.push(`Hot ${conditions.temperature_f}°F air is thin, adding <strong>${impact.temperature_effect_yards.toFixed(0)} yards</strong>`);
-        }
-    }
-
-    // Altitude effect
-    if (impact.altitude_effect_yards > 3) {
-        parts.push(`The ${conditions.altitude_ft.toLocaleString()} ft altitude adds <strong>${impact.altitude_effect_yards.toFixed(0)} yards</strong> due to thinner air`);
-    }
-
-    // Drift
-    const drift = Math.abs(data.adjusted.lateral_drift_yards);
-    if (drift > 5) {
-        const direction = data.adjusted.lateral_drift_yards > 0 ? 'right' : 'left';
-        parts.push(`Expect <strong>${drift.toFixed(0)} yards of ${direction} drift</strong>`);
-    }
-
-    // Net effect
-    const total = impact.total_adjustment_yards;
-    if (Math.abs(total) > 2) {
-        const netEffect = total > 0 ? 'further' : 'shorter';
-        parts.push(`<strong>Net effect: ${Math.abs(total).toFixed(0)} yards ${netEffect}</strong> than calm conditions`);
-    } else {
-        parts.push(`<strong>Net effect: minimal change</strong> from calm conditions`);
-    }
-
-    return parts.join('. ') + '.';
 }
 
 // Modal functions

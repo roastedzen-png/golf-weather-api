@@ -211,58 +211,61 @@
                 </div>
             </div>
 
-            <!-- Weather Conditions Used -->
-            <div class="conditions-bar">
-                <h3>Current Conditions</h3>
-                <div class="conditions-pills">
-                    <span class="condition-pill" id="cond-temp">🌡️ 70°F</span>
-                    <span class="condition-pill" id="cond-wind">💨 20 mph headwind</span>
-                    <span class="condition-pill" id="cond-altitude">⛰️ Sea level</span>
-                    <span class="condition-pill" id="cond-humidity">💧 50% humidity</span>
-                </div>
-            </div>
-
-            <!-- Impact Breakdown -->
-            <div class="impact-breakdown">
-                <h3>Impact Breakdown</h3>
-                <div class="impact-bars">
-                    <div class="impact-item">
-                        <span class="impact-label">Wind Effect</span>
-                        <div class="impact-bar-container">
-                            <div class="impact-bar negative" id="bar-wind" style="width: 80%"></div>
-                        </div>
-                        <span class="impact-value" id="impact-wind">-17.2 yds</span>
-                    </div>
-                    <div class="impact-item">
-                        <span class="impact-label">Temperature</span>
-                        <div class="impact-bar-container">
-                            <div class="impact-bar positive" id="bar-temp" style="width: 5%"></div>
-                        </div>
-                        <span class="impact-value" id="impact-temp">+0.8 yds</span>
-                    </div>
-                    <div class="impact-item">
-                        <span class="impact-label">Altitude</span>
-                        <div class="impact-bar-container">
-                            <div class="impact-bar positive" id="bar-altitude" style="width: 0%"></div>
-                        </div>
-                        <span class="impact-value" id="impact-altitude">+0.0 yds</span>
-                    </div>
-                    <div class="impact-item">
-                        <span class="impact-label">Humidity</span>
-                        <div class="impact-bar-container">
-                            <div class="impact-bar positive" id="bar-humidity" style="width: 2%"></div>
-                        </div>
-                        <span class="impact-value" id="impact-humidity">+0.3 yds</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Plain English Explanation -->
+            <!-- Plain English Explanation - Moved higher -->
             <div class="explanation-box">
                 <h3>💡 What This Means For Your Shot</h3>
                 <p id="explanation-text">
                     The 20 mph headwind is costing you <strong>17 yards</strong> of carry distance. Your 7-iron that normally flies 165 yards will only carry about 148 yards. <strong>Club up to a 5-iron</strong> to reach your target. The ball will land steeper (52° vs 48°) which means <strong>less roll</strong> after landing - that's actually helpful for holding the green.
                 </p>
+            </div>
+
+            <!-- Two-column grid: Conditions + Impact -->
+            <div class="details-grid">
+                <!-- Weather Conditions Used -->
+                <div class="conditions-bar">
+                    <h3>Current Conditions</h3>
+                    <div class="conditions-pills">
+                        <span class="condition-pill" id="cond-temp">🌡️ 70°F</span>
+                        <span class="condition-pill" id="cond-wind">💨 20 mph headwind</span>
+                        <span class="condition-pill" id="cond-altitude">⛰️ Sea level</span>
+                        <span class="condition-pill" id="cond-humidity">💧 50% humidity</span>
+                    </div>
+                </div>
+
+                <!-- Impact Breakdown -->
+                <div class="impact-breakdown">
+                    <h3>Impact Breakdown</h3>
+                    <div class="impact-bars">
+                        <div class="impact-item">
+                            <span class="impact-label">Wind Effect</span>
+                            <div class="impact-bar-container">
+                                <div class="impact-bar negative" id="bar-wind" style="width: 80%"></div>
+                            </div>
+                            <span class="impact-value" id="impact-wind">-17.2 yds</span>
+                        </div>
+                        <div class="impact-item">
+                            <span class="impact-label">Temperature</span>
+                            <div class="impact-bar-container">
+                                <div class="impact-bar positive" id="bar-temp" style="width: 5%"></div>
+                            </div>
+                            <span class="impact-value" id="impact-temp">+0.8 yds</span>
+                        </div>
+                        <div class="impact-item">
+                            <span class="impact-label">Altitude</span>
+                            <div class="impact-bar-container">
+                                <div class="impact-bar positive" id="bar-altitude" style="width: 0%"></div>
+                            </div>
+                            <span class="impact-value" id="impact-altitude">+0.0 yds</span>
+                        </div>
+                        <div class="impact-item">
+                            <span class="impact-label">Humidity</span>
+                            <div class="impact-bar-container">
+                                <div class="impact-bar positive" id="bar-humidity" style="width: 2%"></div>
+                            </div>
+                            <span class="impact-value" id="impact-humidity">+0.3 yds</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 

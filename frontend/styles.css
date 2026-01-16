@@ -370,13 +370,21 @@ body {
     color: var(--primary);
 }
 
+/* Details Grid - Two column layout for conditions + impact */
+.details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
 /* Conditions Bar */
 .conditions-bar {
     background: var(--bg-card);
     border-radius: 0.75rem;
     padding: 1rem 1.5rem;
-    margin-bottom: 1.5rem;
     border: 1px solid var(--border);
+    height: fit-content;
 }
 
 .conditions-bar h3 {
@@ -390,13 +398,13 @@ body {
 
 .conditions-pills {
     display: flex;
-    gap: 0.75rem;
+    gap: 0.5rem;
     flex-wrap: wrap;
 }
 
 .condition-pill {
-    font-size: 0.85rem;
-    padding: 0.5rem 0.85rem;
+    font-size: 0.8rem;
+    padding: 0.4rem 0.7rem;
     background: var(--bg-dark);
     border-radius: 2rem;
     color: var(--text-primary);
@@ -408,7 +416,6 @@ body {
     background: var(--bg-card);
     border-radius: 0.75rem;
     padding: 1.5rem;
-    margin-bottom: 1.5rem;
     border: 1px solid var(--border);
 }
 
@@ -470,6 +477,7 @@ body {
     border: 1px solid var(--secondary);
     border-radius: 0.75rem;
     padding: 1.5rem;
+    margin-bottom: 1.5rem;
 }
 
 .explanation-box h3 {
@@ -711,6 +719,10 @@ body {
 /* Responsive */
 @media (max-width: 1200px) {
     .comparison-container {
+        grid-template-columns: 1fr;
+    }
+
+    .details-grid {
         grid-template-columns: 1fr;
     }
 }
