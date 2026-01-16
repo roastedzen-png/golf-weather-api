@@ -263,7 +263,8 @@ function updateDisplay(data, scenario) {
     // Calculate recommended club and generate explanation
     const carryDiff = adjusted.carry_yards - baseline.carry_yards;
     const driftYards = adjusted.lateral_drift_yards;
-    const recommendation = getClubRecommendation(scenario.standardClub, carryDiff, driftYards, scenario.targetCarry);
+    const elevationFt = scenario.elevation_change_ft || 0;
+    const recommendation = getClubRecommendation(scenario.standardClub, carryDiff, driftYards, scenario.targetCarry, elevationFt);
     document.getElementById('adj-club').textContent = recommendation.text;
 
     // Generate dynamic explanations
@@ -449,8 +450,8 @@ function generateExplanation(scenario, impact, baseline, adjusted, recommendatio
     return explanation;
 }
 
-// Get club recommendation based on distance difference
-function getClubRecommendation(originalClub, carryDiff, driftYards, targetCarry) {
+// Get club recommendation based on distance difference and elevation
+function getClubRecommendation(originalClub, carryDiff, driftYards, targetCarry, elevationFt = 0) {
     const clubOrder = ['LW', 'SW', 'GW', 'PW', '9-Iron', '8-Iron', '7-Iron', '6-Iron', '5-Iron', '4-Iron', '5-Wood', '3-Wood', 'Driver'];
     const currentIndex = clubOrder.findIndex(c => c.toLowerCase() === originalClub.toLowerCase());
 
@@ -458,30 +459,57 @@ function getClubRecommendation(originalClub, carryDiff, driftYards, targetCarry)
     let advice = '';
     let clubsChange = 0;
 
+    // Calculate elevation effect on "playing distance"
+    // Downhill (negative elevation) = hole plays shorter = need LESS club
+    // Uphill (positive elevation) = hole plays longer = need MORE club
+    // ~1 yard per 3 feet of elevation change
+    const elevationEffect = -elevationFt / 3;  // negative elevation = negative effect (less club needed)
+
+    // Total adjustment = weather effect + elevation effect
+    // carryDiff is how much weather changes your carry (negative = ball flies shorter)
+    // elevationEffect is how the hole plays (negative = plays shorter = need less club)
+    //
+    // Example: Pebble Beach #7
+    // - carryDiff = -7 (wind makes ball fly 7 yards shorter)
+    // - elevationEffect = -(-50)/3 = +17 (but wait, downhill means we need LESS club)
+    //
+    // Let's think about it differently:
+    // - Weather makes ball fly shorter by 7 yards -> need more club
+    // - But elevation drop means hole plays 17 yards shorter -> need less club
+    // - Net: need less club by about 10 yards worth
+    const totalAdjustment = carryDiff + elevationEffect;
+
     // Calculate clubs needed based on ~10 yards per club
-    if (carryDiff < -15) {
+    if (totalAdjustment < -15) {
         clubsChange = 2;
-    } else if (carryDiff < -7) {
+    } else if (totalAdjustment < -7) {
         clubsChange = 1;
-    } else if (carryDiff > 15) {
+    } else if (totalAdjustment > 15) {
         clubsChange = -2;
-    } else if (carryDiff > 7) {
+    } else if (totalAdjustment > 7) {
         clubsChange = -1;
     }
+
+    // Build advice string with context
+    const elevationContext = elevationFt !== 0
+        ? (elevationFt < 0
+            ? ` (the ${Math.abs(elevationFt)} ft drop makes it play ${Math.abs(elevationFt / 3).toFixed(0)} yards shorter)`
+            : ` (the ${elevationFt} ft climb makes it play ${(elevationFt / 3).toFixed(0)} yards longer)`)
+        : '';
 
     if (clubsChange > 0) {
         const newIndex = Math.min(currentIndex + clubsChange, clubOrder.length - 1);
         const newClub = clubOrder[newIndex];
         text = `${newClub} (+${clubsChange} club${clubsChange > 1 ? 's' : ''})`;
-        advice = `Club up to a ${newClub} to reach your ${targetCarry}-yard target.`;
+        advice = `Club up to a ${newClub} to reach your ${targetCarry}-yard target${elevationContext}.`;
     } else if (clubsChange < 0) {
         const newIndex = Math.max(currentIndex + clubsChange, 0);
         const newClub = clubOrder[newIndex];
         text = `${newClub} (${clubsChange} club${clubsChange < -1 ? 's' : ''})`;
-        advice = `Club down to a ${newClub} - the ball will fly further than normal.`;
+        advice = `Club down to a ${newClub}${elevationContext}.`;
     } else {
         text = `${originalClub} (same club)`;
-        advice = `Stick with your ${originalClub}.`;
+        advice = `Stick with your ${originalClub}${elevationContext}.`;
     }
 
     // Add drift advice
