@@ -190,7 +190,7 @@ async def root():
         "environment": settings.ENVIRONMENT,
         "docs": "/docs" if show_docs else "disabled",
         "health": "/api/v1/health",
-        "admin_dashboard": "/admin-ui",
+        "admin_dashboard": "/admin",
     }
 
 
@@ -206,19 +206,19 @@ async def legacy_health():
 
 
 # ==================== ADMIN DASHBOARD ====================
-# Serve the React admin dashboard at /admin-ui
+# Serve the React admin dashboard at /admin
 
 ADMIN_DASHBOARD_PATH = Path(__file__).parent.parent / "admin-dashboard-dist"
 
 if ADMIN_DASHBOARD_PATH.exists():
     # Serve static assets (JS, CSS, images)
     app.mount(
-        "/admin-ui/assets",
+        "/admin/assets",
         StaticFiles(directory=ADMIN_DASHBOARD_PATH / "assets"),
         name="admin-assets"
     )
 
-    @app.get("/admin-ui/{full_path:path}", include_in_schema=False)
+    @app.get("/admin/{full_path:path}", include_in_schema=False)
     async def serve_admin_dashboard(full_path: str):
         """Serve the React admin dashboard (handles client-side routing)."""
         index_file = ADMIN_DASHBOARD_PATH / "index.html"
@@ -226,9 +226,9 @@ if ADMIN_DASHBOARD_PATH.exists():
             return FileResponse(index_file)
         return {"error": "Admin dashboard not found"}
 
-    @app.get("/admin-ui", include_in_schema=False)
+    @app.get("/admin", include_in_schema=False)
     async def serve_admin_root():
-        """Serve admin dashboard at /admin-ui."""
+        """Serve admin dashboard at /admin."""
         index_file = ADMIN_DASHBOARD_PATH / "index.html"
         if index_file.exists():
             return FileResponse(index_file)

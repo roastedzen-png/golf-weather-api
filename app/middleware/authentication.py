@@ -21,7 +21,7 @@ PUBLIC_PATHS = [
     "/api/v1/health",
     "/api/v1/admin",
     "/admin-api",    # Admin dashboard API (uses Google OAuth)
-    "/admin-ui",     # Admin dashboard static files
+    "/admin",        # Admin dashboard static files
 ]
 
 # Database connection pool for API key lookups
