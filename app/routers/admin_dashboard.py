@@ -174,16 +174,36 @@ class RequestLog(BaseModel):
 router = APIRouter(prefix="/admin-api", tags=["Admin Dashboard"])
 
 # ============================================
+# MAINTENANCE
+# ============================================
+
+async def run_maintenance():
+    """Run periodic maintenance tasks (cleanup old logs)."""
+    pool = await get_admin_db_pool()
+    if not pool:
+        return 0
+    try:
+        async with pool.acquire() as conn:
+            result = await conn.fetchval("SELECT cleanup_old_request_logs()")
+            return result or 0
+    except Exception:
+        return 0
+
+# ============================================
 # HEALTH CHECK
 # ============================================
 
 @router.get("/health")
 async def admin_dashboard_health(admin_email: str = Depends(verify_google_token)):
     """Health check for admin dashboard (requires Google OAuth)."""
+    # Run maintenance in background (cleanup old logs)
+    deleted = await run_maintenance()
+
     return {
         "status": "healthy",
         "admin": admin_email,
-        "timestamp": datetime.utcnow().isoformat() + "Z"
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "maintenance": {"logs_cleaned": deleted}
     }
 
 # ============================================
