@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     RATE_LIMIT_BURST: int = 100
 
     # CORS - stored as string, parsed by validator
-    CORS_ORIGINS: str = "https://app.inrangegolf.com,https://admin.inrangegolf.com,http://localhost:3000"
+    CORS_ORIGINS: str = "https://app.inrangegolf.com,https://admin.inrangegolf.com,http://localhost:3000,https://golf-weather-api-production.up.railway.app,https://golf-weather-api-staging.up.railway.app,https://golfphysics.io,https://www.golfphysics.io"
 
     # Weather API
     WEATHER_API_KEY: str = ""
