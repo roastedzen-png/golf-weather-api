@@ -28,19 +28,22 @@ class ShotData(BaseModel):
 
 class WeatherConditions(BaseModel):
     wind_speed_mph: float = Field(
-        default=0, ge=0, le=60, description="Wind speed in mph"
+        default=0, ge=0, le=150,
+        description="Wind speed in mph (extended range 0-150 for gaming)"
     )
     wind_direction_deg: float = Field(
         default=0,
         ge=0,
-        lt=360,
+        le=360,
         description="Wind direction in degrees (0=headwind, 90=left-to-right, 180=tailwind, 270=right-to-left)",
     )
     temperature_f: float = Field(
-        default=70, ge=-20, le=120, description="Temperature in Fahrenheit"
+        default=70, ge=-40, le=130,
+        description="Temperature in Fahrenheit (extended range -40 to 130 for gaming)"
     )
     altitude_ft: float = Field(
-        default=0, ge=-500, le=12000, description="Altitude in feet"
+        default=0, ge=-500, le=15000,
+        description="Altitude in feet (extended range for high altitude gaming)"
     )
     humidity_pct: float = Field(
         default=50, ge=0, le=100, description="Relative humidity percentage"
