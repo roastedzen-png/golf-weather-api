@@ -2,11 +2,9 @@
 
 echo "Starting Golf Weather API..."
 
-# Run database migrations if alembic is configured (with timeout)
-if [ -f "alembic.ini" ]; then
-    echo "Running database migrations..."
-    timeout 30 alembic upgrade head || echo "Migration skipped or timed out"
-fi
+# Skip alembic migrations - database is managed manually
+# The leads table and other schema changes are applied via Railway console
+echo "Skipping alembic migrations (database managed manually)"
 
 # Start the application
 echo "Starting uvicorn server..."
