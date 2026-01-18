@@ -72,6 +72,37 @@ class CoordinateLocation(BaseModel):
     lng: float = Field(..., ge=-180, le=180, description="Longitude")
 
 
+class ConditionsOverride(BaseModel):
+    """
+    Custom weather conditions for gaming scenarios.
+    Extended ranges beyond normal weather to support entertainment gaming.
+    """
+    wind_speed: float = Field(
+        ..., ge=0, le=150,
+        description="Wind speed in mph (extended range for gaming: 0-150)"
+    )
+    wind_direction: float = Field(
+        ..., ge=0, le=360,
+        description="Wind direction in degrees (0=North/headwind, 90=East, 180=South/tailwind, 270=West)"
+    )
+    temperature: float = Field(
+        ..., ge=-40, le=130,
+        description="Temperature in Fahrenheit (extended range for gaming: -40 to 130)"
+    )
+    humidity: float = Field(
+        ..., ge=0, le=100,
+        description="Relative humidity percentage (0-100)"
+    )
+    altitude: float = Field(
+        ..., ge=-100, le=15000,
+        description="Altitude in feet (extended range for gaming: -100 to 15000)"
+    )
+    air_pressure: float = Field(
+        ..., ge=25, le=32,
+        description="Barometric pressure in inches of mercury (25-32)"
+    )
+
+
 class CalculateRequest(BaseModel):
     """
     Professional trajectory calculation request.
@@ -145,37 +176,6 @@ class TrajectoryCourseRequest(BaseModel):
 # GAMING ENHANCEMENT MODELS
 # Extended ranges and new parameters for entertainment venues
 # ============================================================================
-
-
-class ConditionsOverride(BaseModel):
-    """
-    Custom weather conditions for gaming scenarios.
-    Extended ranges beyond normal weather to support entertainment gaming.
-    """
-    wind_speed: float = Field(
-        ..., ge=0, le=150,
-        description="Wind speed in mph (extended range for gaming: 0-150)"
-    )
-    wind_direction: float = Field(
-        ..., ge=0, le=360,
-        description="Wind direction in degrees (0=North/headwind, 90=East, 180=South/tailwind, 270=West)"
-    )
-    temperature: float = Field(
-        ..., ge=-40, le=130,
-        description="Temperature in Fahrenheit (extended range for gaming: -40 to 130)"
-    )
-    humidity: float = Field(
-        ..., ge=0, le=100,
-        description="Relative humidity percentage (0-100)"
-    )
-    altitude: float = Field(
-        ..., ge=-100, le=15000,
-        description="Altitude in feet (extended range for gaming: -100 to 15000)"
-    )
-    air_pressure: float = Field(
-        ..., ge=25, le=32,
-        description="Barometric pressure in inches of mercury (25-32)"
-    )
 
 
 class GamingShotData(BaseModel):
