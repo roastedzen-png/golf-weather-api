@@ -2,6 +2,7 @@
   "app_name": "Golf Physics Admin",
   "navigation": {
     "dashboard": "Dashboard",
+    "leads": "Leads",
     "api_keys": "API Keys",
     "usage": "Usage",
     "logs": "Logs",

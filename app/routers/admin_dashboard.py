@@ -167,6 +167,40 @@ class RequestLog(BaseModel):
     request_ip: Optional[str]
     created_at: datetime
 
+
+class LeadInfo(BaseModel):
+    id: int
+    source: str
+    name: str
+    email: str
+    company: Optional[str]
+    use_case: Optional[str]
+    subject: Optional[str]
+    expected_volume: Optional[str]
+    is_high_value: bool
+    priority: str
+    status: str
+    created_at: datetime
+    contacted_at: Optional[datetime]
+    internal_notes: Optional[str]
+
+
+class LeadStats(BaseModel):
+    total: int
+    new: int
+    high_value: int
+    api_requests: int
+    contacts: int
+    this_week: int
+    this_month: int
+
+
+class UpdateLeadRequest(BaseModel):
+    status: Optional[str] = None
+    priority: Optional[str] = None
+    assigned_to: Optional[str] = None
+    internal_notes: Optional[str] = None
+
 # ============================================
 # ROUTER
 # ============================================
@@ -780,3 +814,247 @@ async def trigger_usage_aggregation(
         "aggregated_date": target_date.isoformat(),
         "timestamp": datetime.utcnow().isoformat() + "Z"
     }
+
+
+# ============================================
+# LEADS MANAGEMENT
+# ============================================
+
+@router.get("/leads", response_model=dict)
+async def get_leads(
+    source: Optional[str] = Query(default=None, description="Filter by source (api_key_request, contact_form, newsletter)"),
+    status: Optional[str] = Query(default=None, description="Filter by status (new, contacted, qualified, converted, lost)"),
+    is_high_value: Optional[bool] = Query(default=None, description="Filter by high value flag"),
+    search: Optional[str] = Query(default=None, description="Search by name, email, or company"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    admin_email: str = Depends(verify_google_token)
+):
+    """Get all leads with filters."""
+    pool = await get_admin_db_pool()
+    if not pool:
+        raise HTTPException(status_code=503, detail="Database not available")
+
+    # Build query dynamically
+    where_clauses = []
+    params = []
+    param_num = 1
+
+    if source:
+        where_clauses.append(f"source = ${param_num}")
+        params.append(source)
+        param_num += 1
+
+    if status:
+        where_clauses.append(f"status = ${param_num}")
+        params.append(status)
+        param_num += 1
+
+    if is_high_value is not None:
+        where_clauses.append(f"is_high_value = ${param_num}")
+        params.append(is_high_value)
+        param_num += 1
+
+    if search:
+        where_clauses.append(f"(name ILIKE ${param_num} OR email ILIKE ${param_num} OR company ILIKE ${param_num})")
+        params.append(f"%{search}%")
+        param_num += 1
+
+    where_sql = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
+
+    async with pool.acquire() as conn:
+        # Get total count
+        count_query = f"SELECT COUNT(*) FROM leads {where_sql}"
+        total = await conn.fetchval(count_query, *params) or 0
+
+        # Get leads
+        params.extend([limit, offset])
+        query = f"""
+            SELECT
+                id, source, name, email, company,
+                use_case, subject, expected_volume,
+                is_high_value, priority, status,
+                created_at, contacted_at, internal_notes
+            FROM leads
+            {where_sql}
+            ORDER BY created_at DESC
+            LIMIT ${param_num} OFFSET ${param_num + 1}
+        """
+        rows = await conn.fetch(query, *params)
+
+    leads = [
+        LeadInfo(
+            id=row["id"],
+            source=row["source"],
+            name=row["name"],
+            email=row["email"],
+            company=row["company"],
+            use_case=row["use_case"],
+            subject=row["subject"],
+            expected_volume=row["expected_volume"],
+            is_high_value=row["is_high_value"] or False,
+            priority=row["priority"] or "normal",
+            status=row["status"] or "new",
+            created_at=row["created_at"],
+            contacted_at=row["contacted_at"],
+            internal_notes=row["internal_notes"]
+        )
+        for row in rows
+    ]
+
+    return {
+        "leads": [lead.model_dump() for lead in leads],
+        "total": total,
+        "limit": limit,
+        "offset": offset
+    }
+
+
+@router.get("/leads/stats", response_model=LeadStats)
+async def get_lead_stats(admin_email: str = Depends(verify_google_token)):
+    """Get lead statistics."""
+    pool = await get_admin_db_pool()
+    if not pool:
+        raise HTTPException(status_code=503, detail="Database not available")
+
+    async with pool.acquire() as conn:
+        stats = await conn.fetchrow(
+            """
+            SELECT
+                COUNT(*) as total,
+                COUNT(*) FILTER (WHERE status = 'new') as new,
+                COUNT(*) FILTER (WHERE is_high_value = true) as high_value,
+                COUNT(*) FILTER (WHERE source = 'api_key_request') as api_requests,
+                COUNT(*) FILTER (WHERE source = 'contact_form') as contacts,
+                COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days') as this_week,
+                COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days') as this_month
+            FROM leads
+            """
+        )
+
+    return LeadStats(
+        total=stats["total"] or 0,
+        new=stats["new"] or 0,
+        high_value=stats["high_value"] or 0,
+        api_requests=stats["api_requests"] or 0,
+        contacts=stats["contacts"] or 0,
+        this_week=stats["this_week"] or 0,
+        this_month=stats["this_month"] or 0
+    )
+
+
+@router.patch("/leads/{lead_id}")
+async def update_lead(
+    lead_id: int,
+    request: UpdateLeadRequest,
+    admin_email: str = Depends(verify_google_token)
+):
+    """Update a lead (status, priority, assigned_to, notes)."""
+    pool = await get_admin_db_pool()
+    if not pool:
+        raise HTTPException(status_code=503, detail="Database not available")
+
+    updates = []
+    params = []
+    param_num = 1
+
+    if request.status:
+        updates.append(f"status = ${param_num}")
+        params.append(request.status)
+        param_num += 1
+
+        if request.status == 'contacted':
+            updates.append("contacted_at = NOW()")
+
+    if request.priority:
+        updates.append(f"priority = ${param_num}")
+        params.append(request.priority)
+        param_num += 1
+
+    if request.assigned_to:
+        updates.append(f"assigned_to = ${param_num}")
+        params.append(request.assigned_to)
+        param_num += 1
+
+    if request.internal_notes is not None:
+        updates.append(f"internal_notes = ${param_num}")
+        params.append(request.internal_notes)
+        param_num += 1
+
+    if not updates:
+        raise HTTPException(status_code=400, detail="No updates provided")
+
+    updates.append("updated_at = NOW()")
+    params.append(lead_id)
+
+    query = f"UPDATE leads SET {', '.join(updates)} WHERE id = ${param_num}"
+
+    async with pool.acquire() as conn:
+        result = await conn.execute(query, *params)
+        if result == "UPDATE 0":
+            raise HTTPException(status_code=404, detail="Lead not found")
+
+    return {"success": True, "message": "Lead updated successfully"}
+
+
+@router.get("/leads/export")
+async def export_leads(
+    source: Optional[str] = Query(default=None, description="Filter by source"),
+    admin_email: str = Depends(verify_google_token)
+):
+    """Export leads to CSV."""
+    pool = await get_admin_db_pool()
+    if not pool:
+        raise HTTPException(status_code=503, detail="Database not available")
+
+    where_sql = ""
+    params = []
+    if source:
+        where_sql = "WHERE source = $1"
+        params = [source]
+
+    async with pool.acquire() as conn:
+        query = f"""
+            SELECT
+                created_at, source, name, email, company,
+                use_case, subject, expected_volume,
+                is_high_value, priority, status, contacted_at
+            FROM leads
+            {where_sql}
+            ORDER BY created_at DESC
+        """
+        rows = await conn.fetch(query, *params) if params else await conn.fetch(query)
+
+    # Convert to CSV
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "Created At", "Source", "Name", "Email", "Company",
+        "Use Case", "Subject", "Expected Volume",
+        "High Value", "Priority", "Status", "Contacted At"
+    ])
+
+    for row in rows:
+        writer.writerow([
+            row["created_at"].isoformat() if row["created_at"] else "",
+            row["source"] or "",
+            row["name"] or "",
+            row["email"] or "",
+            row["company"] or "",
+            row["use_case"] or "",
+            row["subject"] or "",
+            row["expected_volume"] or "",
+            "Yes" if row["is_high_value"] else "No",
+            row["priority"] or "",
+            row["status"] or "",
+            row["contacted_at"].isoformat() if row["contacted_at"] else ""
+        ])
+
+    output.seek(0)
+    filename = f"leads-{datetime.utcnow().strftime('%Y%m%d')}.csv"
+
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )

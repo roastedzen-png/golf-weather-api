@@ -8,6 +8,7 @@ import Usage from './components/Usage'
 import Logs from './components/Logs'
 import ApiPlayground from './components/ApiPlayground'
 import SystemHealth from './components/SystemHealth'
+import Leads from './components/Leads'
 import UnitToggle from './components/UnitToggle'
 import LanguageSelector from './components/LanguageSelector'
 import { UnitProvider } from './contexts/UnitContext'
@@ -134,6 +135,7 @@ function App() {
   // Main dashboard
   const tabs = [
     { id: 'dashboard', labelKey: 'navigation.dashboard', icon: '📊' },
+    { id: 'leads', labelKey: 'navigation.leads', icon: '👥' },
     { id: 'apikeys', labelKey: 'navigation.api_keys', icon: '🔑' },
     { id: 'usage', labelKey: 'navigation.usage', icon: '📈' },
     { id: 'logs', labelKey: 'navigation.logs', icon: '📋' },
@@ -187,6 +189,7 @@ function App() {
       {/* Content */}
       <main className="max-w-7xl mx-auto px-4 py-6">
         {activeTab === 'dashboard' && <Dashboard token={token} apiBase={API_BASE} />}
+        {activeTab === 'leads' && <Leads token={token} apiBase={API_BASE} />}
         {activeTab === 'apikeys' && <ApiKeys token={token} apiBase={API_BASE} />}
         {activeTab === 'usage' && <Usage token={token} apiBase={API_BASE} />}
         {activeTab === 'logs' && <Logs token={token} apiBase={API_BASE} />}
