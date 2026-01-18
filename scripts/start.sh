@@ -1,12 +1,11 @@
 #!/bin/bash
-set -e
 
 echo "Starting Golf Weather API..."
 
-# Run database migrations if alembic is configured
+# Run database migrations if alembic is configured (with timeout)
 if [ -f "alembic.ini" ]; then
     echo "Running database migrations..."
-    alembic upgrade head || echo "Migration skipped (database may not be configured)"
+    timeout 30 alembic upgrade head || echo "Migration skipped or timed out"
 fi
 
 # Start the application
