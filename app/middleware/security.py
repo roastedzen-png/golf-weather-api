@@ -33,7 +33,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "style-src 'self' 'unsafe-inline'; "
             "img-src 'self' data: https:; "
             "font-src 'self'; "
-            "connect-src 'self' https://api.golfphysics.io https://golf-weather-api-production.up.railway.app; "
+            "connect-src 'self' https://api.golfphysics.io https://golf-weather-api-production.up.railway.app https://golf-weather-api-staging.up.railway.app;"
             "frame-src https://accounts.google.com; "
             "frame-ancestors 'none';"
         )
